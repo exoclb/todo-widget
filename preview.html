@@ -96,6 +96,12 @@
         gap: 10px;
       }
 
+      .preview-image-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 120px 120px;
+        gap: 10px;
+      }
+
       .preview-actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -172,6 +178,10 @@
         .preview-row {
           grid-template-columns: 1fr;
         }
+
+        .preview-image-row {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
     <script>
@@ -207,6 +217,24 @@
           <button class="preview-button" type="submit">Send Command</button>
         </form>
 
+        <div class="preview-image-row">
+          <div class="preview-field">
+            <label for="panel-image-url">Panel image URL</label>
+            <input id="panel-image-url" placeholder="https://..." autocomplete="off">
+          </div>
+          <div class="preview-field">
+            <label for="panel-image-opacity">Image opacity</label>
+            <input id="panel-image-opacity" type="range" min="0" max="1" step="0.01" value="0.35">
+          </div>
+          <div class="preview-field">
+            <label for="panel-image-fit">Image fit</label>
+            <select id="panel-image-fit">
+              <option value="cover">Cover</option>
+              <option value="contain">Contain</option>
+            </select>
+          </div>
+        </div>
+
         <div class="preview-actions">
           <button class="preview-button" type="button" data-action="sample">Add Sample</button>
           <button class="preview-button" type="button" data-action="done-first">Done First</button>
@@ -240,11 +268,16 @@
 
     <script src="widget.js"></script>
     <script>
-      const fieldData = {
-        debugMode: true,
-        streamerName: "streamer",
-        moderatorNames: "mod, moderator",
-      };
+      function getPreviewFieldData() {
+        return {
+          debugMode: true,
+          streamerName: "streamer",
+          moderatorNames: "mod, moderator",
+          panelImage: document.getElementById("panel-image-url").value,
+          panelImageOpacity: document.getElementById("panel-image-opacity").value,
+          panelImageFit: document.getElementById("panel-image-fit").value,
+        };
+      }
 
       function getMockUser() {
         const username = document.getElementById("username").value.trim() || "viewer";
@@ -280,7 +313,13 @@
 
       document.addEventListener("DOMContentLoaded", async () => {
         window.TwitchTodoWidget.setPreviewLog(document.getElementById("preview-log"));
-        await window.TwitchTodoWidget.init(fieldData);
+        await window.TwitchTodoWidget.init(getPreviewFieldData());
+
+        ["panel-image-url", "panel-image-opacity", "panel-image-fit"].forEach((id) => {
+          document.getElementById(id).addEventListener("input", () => {
+            window.TwitchTodoWidget.init(getPreviewFieldData());
+          });
+        });
 
         document.getElementById("command-form").addEventListener("submit", async (event) => {
           event.preventDefault();

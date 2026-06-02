@@ -5,6 +5,9 @@
   --todo-bg-opacity: 0.78;
   --todo-bg-rgb: 8, 16, 26;
   --todo-surface-rgb: 13, 28, 44;
+  --todo-panel-image: none;
+  --todo-panel-image-opacity: 0;
+  --todo-panel-image-fit: cover;
   --todo-text: #f4fbff;
   --todo-muted: #9fb4c3;
   --todo-border: rgba(41, 244, 255, 0.38);
@@ -47,15 +50,37 @@ body {
 }
 
 .todo-widget__panel {
+  position: relative;
   width: 100%;
   padding: 12px;
   border: 1px solid var(--todo-border);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(var(--todo-surface-rgb), 0.62), rgba(var(--todo-bg-rgb), var(--todo-bg-opacity))),
-    rgba(var(--todo-bg-rgb), var(--todo-bg-opacity));
+  background: linear-gradient(
+    135deg,
+    rgba(var(--todo-surface-rgb), var(--todo-bg-opacity)),
+    rgba(var(--todo-bg-rgb), var(--todo-bg-opacity))
+  );
   box-shadow: 0 14px 34px var(--todo-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+.todo-widget__panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--todo-panel-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: var(--todo-panel-image-fit);
+  opacity: var(--todo-panel-image-opacity);
+  pointer-events: none;
+}
+
+.todo-widget__panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .todo-widget__header {

@@ -159,12 +159,37 @@
     "group": "Appearance"
   },
   "backgroundOpacity": {
-    "type": "number",
+    "type": "slider",
     "label": "Background opacity",
     "value": 0.78,
-    "min": 0.35,
+    "min": 0,
     "max": 1,
     "step": 0.01,
+    "group": "Appearance"
+  },
+  "panelImage": {
+    "type": "image-input",
+    "label": "Panel background image",
+    "value": "",
+    "group": "Appearance"
+  },
+  "panelImageOpacity": {
+    "type": "slider",
+    "label": "Panel image opacity",
+    "value": 0.35,
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "group": "Appearance"
+  },
+  "panelImageFit": {
+    "type": "dropdown",
+    "label": "Panel image fit",
+    "value": "cover",
+    "options": {
+      "cover": "Cover panel",
+      "contain": "Contain full image"
+    },
     "group": "Appearance"
   },
   "enableAnimations": {

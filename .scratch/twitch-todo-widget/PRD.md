@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: implemented
 Title: Twitch Todo Widget
 
 ## Problem Statement
@@ -116,6 +116,7 @@ The widget uses Silent Command Handling: successful and Ignored Commands never p
 
 ## Further Notes
 
-- The local issue tracker status for this PRD is `ready-for-agent`.
+- The local issue tracker status for this PRD is `implemented`.
 - The current implementation already includes the v1 widget and local preview, so this PRD primarily records the product contract and future maintenance target.
+- Execution checked the StreamElements custom widget lifecycle and chat event shape against official documentation via Context7, then updated the event parser to support `obj.detail.event.data`.
 - If the widget grows beyond v1, the next likely domain additions are Task Approval, Pending Task, and richer Task Manager tooling.

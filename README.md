@@ -60,7 +60,8 @@ Invalid commands are ignored silently in production. Enable `debugMode` while te
 ## Display
 
 - Compact vertical list with configurable corner position.
-- Configurable title, empty state, theme, Google Font, accent color, width, opacity, and animations.
+- Configurable title, empty state, theme, Google Font, accent color, width, opacity, custom panel image, and animations.
+- Optional panel background image supports upload through StreamElements fields, image opacity, and cover/contain fit modes.
 - Completed tasks stay visible briefly, then auto-hide. The default is `5` seconds.
 
 ## StreamElements Setup

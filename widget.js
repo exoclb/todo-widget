@@ -24,12 +24,16 @@
     accentColor: "#29f4ff",
     maxWidth: 360,
     backgroundOpacity: 0.78,
+    panelImage: "",
+    panelImageOpacity: 0.35,
+    panelImageFit: "cover",
     enableAnimations: true,
     streamerName: "",
   };
 
   const VALID_THEMES = new Set(["neon", "cozy", "mono", "pixel"]);
   const VALID_POSITIONS = new Set(["top-left", "top-right", "bottom-left", "bottom-right"]);
+  const VALID_IMAGE_FITS = new Set(["cover", "contain"]);
   const state = {
     config: { ...DEFAULT_CONFIG },
     storage: null,
@@ -62,6 +66,17 @@
       .filter(Boolean);
   }
 
+  function normalizeImageUrl(value) {
+    const url = String(value || "").trim();
+    if (!url || /^javascript:/i.test(url)) return "";
+    return url;
+  }
+
+  function cssUrl(value) {
+    const url = normalizeImageUrl(value);
+    return url ? `url("${url.replace(/["\\]/g, "\\$&")}")` : "none";
+  }
+
   function buildConfig(fieldData) {
     const source = fieldData || {};
     return {
@@ -84,7 +99,10 @@
       fontFamily: String(source.fontFamily || DEFAULT_CONFIG.fontFamily).trim() || DEFAULT_CONFIG.fontFamily,
       accentColor: String(source.accentColor || DEFAULT_CONFIG.accentColor).trim() || DEFAULT_CONFIG.accentColor,
       maxWidth: clampNumber(source.maxWidth, DEFAULT_CONFIG.maxWidth, 260, 520),
-      backgroundOpacity: clampNumber(source.backgroundOpacity, DEFAULT_CONFIG.backgroundOpacity, 0.35, 1),
+      backgroundOpacity: clampNumber(source.backgroundOpacity, DEFAULT_CONFIG.backgroundOpacity, 0, 1),
+      panelImage: normalizeImageUrl(source.panelImage),
+      panelImageOpacity: clampNumber(source.panelImageOpacity, DEFAULT_CONFIG.panelImageOpacity, 0, 1),
+      panelImageFit: VALID_IMAGE_FITS.has(source.panelImageFit) ? source.panelImageFit : DEFAULT_CONFIG.panelImageFit,
       enableAnimations: source.enableAnimations !== false && source.enableAnimations !== "false",
       debugMode: source.debugMode === true || source.debugMode === "true",
       moderatorNames: String(source.moderatorNames || ""),
@@ -189,8 +207,9 @@
 
   function extractChatEvent(event) {
     const detail = event && event.detail ? event.detail : event || {};
-    const data = detail.event || detail.data || detail;
-    const listener = detail.listener || data.listener || "";
+    const envelope = detail.event || detail.data || detail;
+    const data = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+    const listener = detail.listener || envelope.listener || data.listener || "";
     const renderedText = data.renderedText || data.text || data.message || "";
     const user = data.user || data.sender || data.author || {};
     const displayName =
@@ -406,6 +425,12 @@
     document.documentElement.style.setProperty("--todo-accent", state.config.accentColor);
     document.documentElement.style.setProperty("--todo-max-width", `${state.config.maxWidth}px`);
     document.documentElement.style.setProperty("--todo-bg-opacity", state.config.backgroundOpacity);
+    document.documentElement.style.setProperty("--todo-panel-image", cssUrl(state.config.panelImage));
+    document.documentElement.style.setProperty(
+      "--todo-panel-image-opacity",
+      state.config.panelImage ? state.config.panelImageOpacity : 0,
+    );
+    document.documentElement.style.setProperty("--todo-panel-image-fit", state.config.panelImageFit);
   }
 
   function render(stored) {
