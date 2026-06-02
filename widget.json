@@ -1,0 +1,176 @@
+{
+  "titleText": {
+    "type": "text",
+    "label": "Title text",
+    "value": "STREAM TASKS",
+    "group": "Content"
+  },
+  "emptyText": {
+    "type": "text",
+    "label": "Empty state text",
+    "value": "No tasks yet",
+    "group": "Content"
+  },
+  "addCommand": {
+    "type": "text",
+    "label": "Add command",
+    "value": "!task",
+    "group": "Commands"
+  },
+  "doneCommand": {
+    "type": "text",
+    "label": "Done command",
+    "value": "!done",
+    "group": "Commands"
+  },
+  "deleteCommand": {
+    "type": "text",
+    "label": "Remove command",
+    "value": "!delete",
+    "group": "Commands"
+  },
+  "resetCommand": {
+    "type": "text",
+    "label": "Reset command",
+    "value": "!taskreset",
+    "group": "Commands"
+  },
+  "maxTasks": {
+    "type": "number",
+    "label": "Max active tasks",
+    "value": 10,
+    "min": 1,
+    "max": 20,
+    "step": 1,
+    "group": "Limits"
+  },
+  "maxTaskLength": {
+    "type": "number",
+    "label": "Max task length",
+    "value": 80,
+    "min": 10,
+    "max": 160,
+    "step": 1,
+    "group": "Limits"
+  },
+  "perUserTaskLimit": {
+    "type": "number",
+    "label": "Active tasks per viewer",
+    "value": 2,
+    "min": 1,
+    "max": 10,
+    "step": 1,
+    "group": "Limits"
+  },
+  "globalCooldownSeconds": {
+    "type": "number",
+    "label": "Global add cooldown seconds",
+    "value": 5,
+    "min": 0,
+    "max": 120,
+    "step": 1,
+    "group": "Limits"
+  },
+  "userCooldownSeconds": {
+    "type": "number",
+    "label": "Per-user add cooldown seconds",
+    "value": 30,
+    "min": 0,
+    "max": 300,
+    "step": 1,
+    "group": "Limits"
+  },
+  "completedVisibleSeconds": {
+    "type": "number",
+    "label": "Completed visible seconds",
+    "value": 5,
+    "min": 1,
+    "max": 30,
+    "step": 1,
+    "group": "Limits"
+  },
+  "moderatorNames": {
+    "type": "text",
+    "label": "Fallback moderator usernames, comma-separated",
+    "value": "",
+    "group": "Moderation"
+  },
+  "streamerName": {
+    "type": "text",
+    "label": "Fallback streamer username",
+    "value": "",
+    "group": "Moderation"
+  },
+  "blacklistWords": {
+    "type": "text",
+    "label": "Blacklisted words, comma-separated",
+    "value": "",
+    "group": "Moderation"
+  },
+  "debugMode": {
+    "type": "checkbox",
+    "label": "Debug mode",
+    "value": false,
+    "group": "Moderation"
+  },
+  "position": {
+    "type": "dropdown",
+    "label": "Position",
+    "value": "top-right",
+    "options": {
+      "top-right": "Top right",
+      "top-left": "Top left",
+      "bottom-right": "Bottom right",
+      "bottom-left": "Bottom left"
+    },
+    "group": "Appearance"
+  },
+  "theme": {
+    "type": "dropdown",
+    "label": "Theme",
+    "value": "neon",
+    "options": {
+      "neon": "Clean neon HUD",
+      "cozy": "Cozy pastel",
+      "mono": "Minimal monochrome",
+      "pixel": "Pixel retro"
+    },
+    "group": "Appearance"
+  },
+  "fontFamily": {
+    "type": "googleFont",
+    "label": "Font",
+    "value": "Rajdhani",
+    "group": "Appearance"
+  },
+  "accentColor": {
+    "type": "colorpicker",
+    "label": "Accent color",
+    "value": "#29f4ff",
+    "group": "Appearance"
+  },
+  "maxWidth": {
+    "type": "number",
+    "label": "Max width px",
+    "value": 360,
+    "min": 260,
+    "max": 520,
+    "step": 10,
+    "group": "Appearance"
+  },
+  "backgroundOpacity": {
+    "type": "number",
+    "label": "Background opacity",
+    "value": 0.78,
+    "min": 0.35,
+    "max": 1,
+    "step": 0.01,
+    "group": "Appearance"
+  },
+  "enableAnimations": {
+    "type": "checkbox",
+    "label": "Enable animations",
+    "value": true,
+    "group": "Appearance"
+  }
+}

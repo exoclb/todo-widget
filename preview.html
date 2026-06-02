@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Twitch Todo Widget Preview</title>
+    <link rel="stylesheet" href="widget.css">
+    <style>
+      :root {
+        --preview-bg: #18202a;
+        --preview-panel: rgba(255, 255, 255, 0.08);
+        --preview-border: rgba(255, 255, 255, 0.14);
+        --preview-text: #f7fbff;
+        --preview-muted: #aab6c2;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 16% 18%, rgba(255, 196, 88, 0.24), transparent 30%),
+          radial-gradient(circle at 82% 28%, rgba(41, 244, 255, 0.2), transparent 32%),
+          linear-gradient(135deg, #18202a 0%, #253041 48%, #141922 100%);
+        color: var(--preview-text);
+        font-family: "Rajdhani", sans-serif;
+        overflow: auto;
+      }
+
+      .preview-shell {
+        display: grid;
+        grid-template-columns: minmax(280px, 380px) minmax(320px, 1fr);
+        gap: 24px;
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .preview-controls,
+      .preview-stage {
+        border: 1px solid var(--preview-border);
+        border-radius: 8px;
+        background: var(--preview-panel);
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+        backdrop-filter: blur(12px);
+      }
+
+      .preview-controls {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        align-content: start;
+        gap: 16px;
+        padding: 18px;
+      }
+
+      .preview-heading {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1;
+      }
+
+      .preview-note {
+        margin: 0;
+        color: var(--preview-muted);
+        font-size: 14px;
+        line-height: 1.35;
+      }
+
+      .preview-field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .preview-field label {
+        color: var(--preview-muted);
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .preview-field input,
+      .preview-field select {
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--preview-border);
+        border-radius: 6px;
+        background: rgba(5, 9, 15, 0.55);
+        color: var(--preview-text);
+        font: inherit;
+        font-size: 16px;
+        padding: 8px 10px;
+      }
+
+      .preview-row {
+        display: grid;
+        grid-template-columns: 1fr 130px;
+        gap: 10px;
+      }
+
+      .preview-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .preview-button {
+        min-height: 38px;
+        border: 1px solid rgba(41, 244, 255, 0.35);
+        border-radius: 6px;
+        background: rgba(41, 244, 255, 0.12);
+        color: var(--preview-text);
+        cursor: pointer;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .preview-button:hover {
+        background: rgba(41, 244, 255, 0.18);
+      }
+
+      .preview-log {
+        display: grid;
+        gap: 4px;
+        max-height: 190px;
+        overflow: auto;
+        padding: 10px;
+        border: 1px solid var(--preview-border);
+        border-radius: 6px;
+        background: rgba(5, 9, 15, 0.42);
+        color: var(--preview-muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .preview-stage {
+        position: relative;
+        z-index: 1;
+        min-height: 540px;
+        padding: 24px;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .preview-stage__label {
+        position: absolute;
+        right: 18px;
+        bottom: 14px;
+        color: rgba(255, 255, 255, 0.38);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .preview-widget-slot {
+        width: min(100%, 420px);
+        margin-left: auto;
+        pointer-events: none;
+      }
+
+      @media (max-width: 820px) {
+        .preview-shell {
+          grid-template-columns: 1fr;
+          padding: 14px;
+        }
+
+        .preview-stage {
+          min-height: 420px;
+        }
+
+        .preview-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <main class="preview-shell">
+      <section class="preview-controls" aria-label="Preview controls">
+        <div>
+          <h1 class="preview-heading">Twitch Todo Widget</h1>
+          <p class="preview-note">Mock Twitch chat commands locally before installing the widget in StreamElements.</p>
+        </div>
+
+        <div class="preview-row">
+          <div class="preview-field">
+            <label for="username">Username</label>
+            <input id="username" value="viewerOne" autocomplete="off">
+          </div>
+          <div class="preview-field">
+            <label for="role">Role</label>
+            <select id="role">
+              <option value="viewer">Viewer</option>
+              <option value="moderator">Moderator</option>
+              <option value="streamer">Streamer</option>
+            </select>
+          </div>
+        </div>
+
+        <form id="command-form" class="preview-field">
+          <label for="command">Chat command</label>
+          <input id="command" value="!task Check game audio" autocomplete="off">
+          <button class="preview-button" type="submit">Send Command</button>
+        </form>
+
+        <div class="preview-actions">
+          <button class="preview-button" type="button" data-action="sample">Add Sample</button>
+          <button class="preview-button" type="button" data-action="done-first">Done First</button>
+          <button class="preview-button" type="button" data-action="remove-first">Remove First</button>
+          <button class="preview-button" type="button" data-action="fill">Fill To Max</button>
+          <button class="preview-button" type="button" data-action="reset">Reset</button>
+        </div>
+
+        <div>
+          <p class="preview-note">Preview log</p>
+          <div id="preview-log" class="preview-log" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="preview-stage" aria-label="Widget preview stage">
+        <div class="preview-widget-slot">
+          <div id="todo-widget" class="todo-widget" aria-live="polite">
+            <div class="todo-widget__panel">
+              <header class="todo-widget__header">
+                <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+                <div class="todo-widget__counter" id="todo-counter">0/10</div>
+              </header>
+              <ol class="todo-widget__list" id="todo-list"></ol>
+              <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+            </div>
+          </div>
+        </div>
+        <div class="preview-stage__label">Local preview</div>
+      </section>
+    </main>
+
+    <script src="widget.js"></script>
+    <script>
+      const fieldData = {
+        debugMode: true,
+        streamerName: "streamer",
+        moderatorNames: "mod, moderator",
+      };
+
+      function getMockUser() {
+        const username = document.getElementById("username").value.trim() || "viewer";
+        const role = document.getElementById("role").value;
+        const badges = role === "viewer" ? [] : [{ type: role === "streamer" ? "broadcaster" : "moderator" }];
+        return {
+          username,
+          displayName: username,
+          authorId: username.toLowerCase(),
+          badges,
+          roles: role === "viewer" ? [] : [role],
+        };
+      }
+
+      function sendMockMessage(message) {
+        const user = getMockUser();
+        return window.TwitchTodoWidget.enqueueCommand({
+          message,
+          displayName: user.displayName,
+          username: user.username,
+          authorId: user.authorId,
+          badges: user.badges,
+          roles: user.roles,
+          raw: { preview: true },
+        });
+      }
+
+      async function getFirstActiveId() {
+        const stored = await window.TwitchTodoWidget.getState();
+        const first = stored.tasks.find((task) => task.status === "active");
+        return first ? first.id : null;
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        window.TwitchTodoWidget.setPreviewLog(document.getElementById("preview-log"));
+        await window.TwitchTodoWidget.init(fieldData);
+
+        document.getElementById("command-form").addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const input = document.getElementById("command");
+          await sendMockMessage(input.value);
+          input.focus();
+        });
+
+        document.querySelectorAll("[data-action]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            const action = button.dataset.action;
+            if (action === "sample") {
+              await sendMockMessage(`!task Sample task ${Math.floor(Math.random() * 100)}`);
+            }
+            if (action === "done-first") {
+              const id = await getFirstActiveId();
+              if (id) await sendMockMessage(`!done ${id}`);
+            }
+            if (action === "remove-first") {
+              const id = await getFirstActiveId();
+              if (id) await sendMockMessage(`!delete ${id}`);
+            }
+            if (action === "reset") {
+              const role = document.getElementById("role");
+              const previousRole = role.value;
+              role.value = "streamer";
+              await sendMockMessage("!taskreset");
+              role.value = previousRole;
+            }
+            if (action === "fill") {
+              const role = document.getElementById("role");
+              const username = document.getElementById("username");
+              const previousRole = role.value;
+              const previousUsername = username.value;
+              role.value = "streamer";
+              for (let index = 1; index <= 10; index += 1) {
+                username.value = `seed${index}`;
+                await sendMockMessage(`!task Fill sample ${index}`);
+              }
+              role.value = previousRole;
+              username.value = previousUsername;
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
