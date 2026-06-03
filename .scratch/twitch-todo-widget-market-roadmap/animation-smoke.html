@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Animation Smoke</title>
+    <link rel="stylesheet" href="../../widget.css">
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <div id="todo-widget" class="todo-widget" aria-live="polite">
+      <div class="todo-widget__panel">
+        <header class="todo-widget__header">
+          <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+          <div class="todo-widget__counter" id="todo-counter">0/10</div>
+        </header>
+        <ol class="todo-widget__list" id="todo-list"></ol>
+        <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+      </div>
+    </div>
+    <pre id="result">RUNNING</pre>
+    <script src="../../widget.js"></script>
+    <script>
+      (async () => {
+        const result = document.getElementById("result");
+        const user = {
+          displayName: "streamer",
+          username: "streamer",
+          authorId: "streamer",
+          badges: [{ type: "broadcaster" }],
+          roles: ["streamer"],
+        };
+
+        try {
+          localStorage.clear();
+          await window.TwitchTodoWidget.init({
+            enableAnimations: true,
+            animationSpeed: 1.5,
+            streamerName: "streamer",
+            globalCooldownSeconds: 0,
+            userCooldownSeconds: 0,
+          });
+
+          await window.TwitchTodoWidget.enqueueCommand({ ...user, message: "!task Animate me" });
+          const added = document.querySelector(".todo-widget__item");
+          if (!added || !added.classList.contains("is-new")) throw new Error("New Task did not get is-new");
+          if (getComputedStyle(document.documentElement).getPropertyValue("--todo-animation-speed").trim() !== "1.5") {
+            throw new Error("Animation speed CSS variable did not apply");
+          }
+
+          await window.TwitchTodoWidget.enqueueCommand({ ...user, message: "!done 1" });
+          const completed = document.querySelector(".todo-widget__item");
+          if (!completed || !completed.classList.contains("is-completed")) throw new Error("Task did not complete");
+          if (!completed.classList.contains("is-completing")) throw new Error("Completed Task did not get is-completing");
+
+          await window.TwitchTodoWidget.enqueueCommand({ ...user, message: "!task Remove me" });
+          await window.TwitchTodoWidget.enqueueCommand({ ...user, message: "!delete 2" });
+          if ([...document.querySelectorAll(".todo-widget__item")].some((item) => item.textContent.includes("Remove me"))) {
+            throw new Error("Removed Task stayed visible");
+          }
+
+          await window.TwitchTodoWidget.init({ enableAnimations: false });
+          if (document.getElementById("todo-widget").dataset.animations !== "false") {
+            throw new Error("Disabled animation setting did not apply");
+          }
+
+          result.textContent = "PASS";
+        } catch (error) {
+          result.textContent = `FAIL: ${error.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>

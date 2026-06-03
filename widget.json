@@ -125,17 +125,30 @@
     },
     "group": "Appearance"
   },
-  "theme": {
+  "themePreset": {
     "type": "dropdown",
-    "label": "Theme",
+    "label": "Theme preset",
     "value": "neon",
     "options": {
-      "neon": "Clean neon HUD",
+      "minimal": "Minimal clean",
       "cozy": "Cozy pastel",
-      "mono": "Minimal monochrome",
-      "pixel": "Pixel retro"
+      "neon": "Clean neon HUD",
+      "quest": "RPG quest board",
+      "vtuber": "VTuber cute"
     },
     "group": "Appearance"
+  },
+  "taskLabelSingular": {
+    "type": "text",
+    "label": "Single task label",
+    "value": "Task",
+    "group": "Content"
+  },
+  "taskLabelPlural": {
+    "type": "text",
+    "label": "Multiple task label",
+    "value": "Tasks",
+    "group": "Content"
   },
   "fontFamily": {
     "type": "googleFont",
@@ -196,6 +209,15 @@
     "type": "checkbox",
     "label": "Enable animations",
     "value": true,
+    "group": "Appearance"
+  },
+  "animationSpeed": {
+    "type": "slider",
+    "label": "Animation speed",
+    "value": 1,
+    "min": 0.5,
+    "max": 2,
+    "step": 0.1,
     "group": "Appearance"
   }
 }

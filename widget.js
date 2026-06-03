@@ -20,6 +20,9 @@
     debugMode: false,
     position: "top-right",
     theme: "neon",
+    themePreset: "neon",
+    taskLabelSingular: "Task",
+    taskLabelPlural: "Tasks",
     fontFamily: "Rajdhani",
     accentColor: "#29f4ff",
     maxWidth: 360,
@@ -28,10 +31,11 @@
     panelImageOpacity: 0.35,
     panelImageFit: "cover",
     enableAnimations: true,
+    animationSpeed: 1,
     streamerName: "",
   };
 
-  const VALID_THEMES = new Set(["neon", "cozy", "mono", "pixel"]);
+  const VALID_THEMES = new Set(["minimal", "cozy", "neon", "quest", "vtuber", "mono", "pixel"]);
   const VALID_POSITIONS = new Set(["top-left", "top-right", "bottom-left", "bottom-right"]);
   const VALID_IMAGE_FITS = new Set(["cover", "contain"]);
   const state = {
@@ -41,6 +45,8 @@
     cleanupTimer: null,
     globalCooldownUntil: 0,
     userCooldowns: new Map(),
+    renderedTaskStatuses: new Map(),
+    hasRenderedTasks: false,
     previewLog: null,
   };
 
@@ -77,6 +83,16 @@
     return url ? `url("${url.replace(/["\\]/g, "\\$&")}")` : "none";
   }
 
+  function normalizeThemePreset(source) {
+    const value = String(source.themePreset || source.theme || DEFAULT_CONFIG.themePreset).trim();
+    return VALID_THEMES.has(value) ? value : DEFAULT_CONFIG.themePreset;
+  }
+
+  function normalizeLabel(value, fallback) {
+    const label = String(value || fallback).replace(/\s+/g, " ").trim();
+    return label || fallback;
+  }
+
   function buildConfig(fieldData) {
     const source = fieldData || {};
     return {
@@ -95,7 +111,10 @@
       userCooldownSeconds: clampNumber(source.userCooldownSeconds, DEFAULT_CONFIG.userCooldownSeconds, 0, 300),
       completedVisibleSeconds: clampNumber(source.completedVisibleSeconds, DEFAULT_CONFIG.completedVisibleSeconds, 1, 30),
       position: VALID_POSITIONS.has(source.position) ? source.position : DEFAULT_CONFIG.position,
-      theme: VALID_THEMES.has(source.theme) ? source.theme : DEFAULT_CONFIG.theme,
+      theme: normalizeThemePreset(source),
+      themePreset: normalizeThemePreset(source),
+      taskLabelSingular: normalizeLabel(source.taskLabelSingular, DEFAULT_CONFIG.taskLabelSingular),
+      taskLabelPlural: normalizeLabel(source.taskLabelPlural, DEFAULT_CONFIG.taskLabelPlural),
       fontFamily: String(source.fontFamily || DEFAULT_CONFIG.fontFamily).trim() || DEFAULT_CONFIG.fontFamily,
       accentColor: String(source.accentColor || DEFAULT_CONFIG.accentColor).trim() || DEFAULT_CONFIG.accentColor,
       maxWidth: clampNumber(source.maxWidth, DEFAULT_CONFIG.maxWidth, 260, 520),
@@ -104,6 +123,7 @@
       panelImageOpacity: clampNumber(source.panelImageOpacity, DEFAULT_CONFIG.panelImageOpacity, 0, 1),
       panelImageFit: VALID_IMAGE_FITS.has(source.panelImageFit) ? source.panelImageFit : DEFAULT_CONFIG.panelImageFit,
       enableAnimations: source.enableAnimations !== false && source.enableAnimations !== "false",
+      animationSpeed: clampNumber(source.animationSpeed, DEFAULT_CONFIG.animationSpeed, 0.5, 2),
       debugMode: source.debugMode === true || source.debugMode === "true",
       moderatorNames: String(source.moderatorNames || ""),
       blacklistWords: String(source.blacklistWords || ""),
@@ -419,8 +439,9 @@
     const widget = document.getElementById("todo-widget");
     if (!widget) return;
     widget.dataset.position = state.config.position;
-    widget.dataset.theme = state.config.theme;
+    widget.dataset.theme = state.config.themePreset;
     widget.dataset.animations = String(state.config.enableAnimations);
+    document.documentElement.style.setProperty("--todo-animation-speed", state.config.animationSpeed);
     document.documentElement.style.setProperty("--todo-font", `"${state.config.fontFamily}", sans-serif`);
     document.documentElement.style.setProperty("--todo-accent", state.config.accentColor);
     document.documentElement.style.setProperty("--todo-max-width", `${state.config.maxWidth}px`);
@@ -443,18 +464,29 @@
     if (!widget || !title || !counter || !list || !empty) return;
 
     const orderedTasks = [...stored.tasks].sort((a, b) => a.createdAt - b.createdAt);
+    const previousStatuses = new Map(state.renderedTaskStatuses);
     const activeCount = getActiveTasks(stored.tasks).length;
+    const counterLabel = activeCount === 1 ? state.config.taskLabelSingular : state.config.taskLabelPlural;
     widget.classList.toggle("has-tasks", orderedTasks.length > 0);
     title.textContent = state.config.titleText;
-    counter.textContent = `${activeCount}/${state.config.maxTasks}`;
+    counter.setAttribute("aria-label", `${activeCount} active ${counterLabel} out of ${state.config.maxTasks}`);
+    counter.textContent = `${activeCount}/${state.config.maxTasks} ${counterLabel}`;
     empty.textContent = state.config.emptyText;
-    list.replaceChildren(...orderedTasks.map(createTaskElement));
+    list.replaceChildren(...orderedTasks.map((task) => createTaskElement(task, previousStatuses)));
+    state.renderedTaskStatuses = new Map(orderedTasks.map((task) => [task.id, task.status]));
+    state.hasRenderedTasks = true;
   }
 
-  function createTaskElement(task) {
+  function createTaskElement(task, previousStatuses) {
     const item = document.createElement("li");
     item.className = "todo-widget__item";
     if (task.status === "completed") item.classList.add("is-completed");
+    if (state.hasRenderedTasks && !previousStatuses.has(task.id) && task.status === "active") {
+      item.classList.add("is-new");
+    }
+    if (state.hasRenderedTasks && previousStatuses.get(task.id) === "active" && task.status === "completed") {
+      item.classList.add("is-completing");
+    }
 
     const number = document.createElement("div");
     number.className = "todo-widget__number";

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Theme Quest Smoke</title>
+    <link rel="stylesheet" href="../../widget.css">
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <div id="todo-widget" class="todo-widget" aria-live="polite">
+      <div class="todo-widget__panel">
+        <header class="todo-widget__header">
+          <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+          <div class="todo-widget__counter" id="todo-counter">0/10</div>
+        </header>
+        <ol class="todo-widget__list" id="todo-list"></ol>
+        <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+      </div>
+    </div>
+    <pre id="result">RUNNING</pre>
+    <script src="../../widget.js"></script>
+    <script>
+      (async () => {
+        const themes = ["minimal", "cozy", "neon", "quest", "vtuber"];
+        const modes = [
+          ["Task", "Tasks", "STREAM TASKS"],
+          ["Quest", "Quests", "QUEST BOARD"],
+          ["Mission", "Missions", "LIVE MISSIONS"],
+          ["Challenge", "Challenges", "CHAT CHALLENGES"],
+        ];
+        const result = document.getElementById("result");
+
+        try {
+          for (const themePreset of themes) {
+            for (const [taskLabelSingular, taskLabelPlural, titleText] of modes) {
+              localStorage.clear();
+              await window.TwitchTodoWidget.init({
+                themePreset,
+                taskLabelSingular,
+                taskLabelPlural,
+                titleText,
+                emptyText: `No ${taskLabelPlural.toLowerCase()} yet`,
+                debugMode: true,
+                globalCooldownSeconds: 0,
+                userCooldownSeconds: 0,
+              });
+              await window.TwitchTodoWidget.enqueueCommand({
+                message: "!task Smoke check",
+                displayName: "viewerOne",
+                username: "viewerOne",
+                authorId: "viewer-one",
+                badges: [],
+                roles: [],
+              });
+
+              const widget = document.getElementById("todo-widget");
+              const title = document.getElementById("todo-title").textContent;
+              const counter = document.getElementById("todo-counter").textContent;
+              const item = document.querySelector(".todo-widget__item");
+              if (widget.dataset.theme !== themePreset) throw new Error(`Theme failed: ${themePreset}`);
+              if (title !== titleText) throw new Error(`Title failed: ${titleText}`);
+              if (!counter.includes(taskLabelSingular)) throw new Error(`Counter label failed: ${counter}`);
+              if (!item || item.textContent.trim().length === 0) throw new Error("Task item did not render");
+            }
+          }
+          result.textContent = "PASS";
+        } catch (error) {
+          result.textContent = `FAIL: ${error.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>

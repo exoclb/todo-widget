@@ -217,6 +217,42 @@
           <button class="preview-button" type="submit">Send Command</button>
         </form>
 
+        <div class="preview-row">
+          <div class="preview-field">
+            <label for="theme-preset">Theme preset</label>
+            <select id="theme-preset">
+              <option value="minimal">Minimal clean</option>
+              <option value="cozy">Cozy pastel</option>
+              <option value="neon" selected>Clean neon HUD</option>
+              <option value="quest">RPG quest board</option>
+              <option value="vtuber">VTuber cute</option>
+            </select>
+          </div>
+          <div class="preview-field">
+            <label for="mode-preset">Wording</label>
+            <select id="mode-preset">
+              <option value="tasks" selected>Tasks</option>
+              <option value="quests">Quests</option>
+              <option value="missions">Missions</option>
+              <option value="challenges">Challenges</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="preview-row">
+          <div class="preview-field">
+            <label for="enable-animations">Animations</label>
+            <select id="enable-animations">
+              <option value="true" selected>Enabled</option>
+              <option value="false">Disabled</option>
+            </select>
+          </div>
+          <div class="preview-field">
+            <label for="animation-speed">Speed</label>
+            <input id="animation-speed" type="range" min="0.5" max="2" step="0.1" value="1">
+          </div>
+        </div>
+
         <div class="preview-image-row">
           <div class="preview-field">
             <label for="panel-image-url">Panel image URL</label>
@@ -269,10 +305,29 @@
     <script src="widget.js"></script>
     <script>
       function getPreviewFieldData() {
+        const wording = {
+          tasks: { titleText: "STREAM TASKS", emptyText: "No tasks yet", singular: "Task", plural: "Tasks" },
+          quests: { titleText: "QUEST BOARD", emptyText: "No quests yet", singular: "Quest", plural: "Quests" },
+          missions: { titleText: "LIVE MISSIONS", emptyText: "No missions yet", singular: "Mission", plural: "Missions" },
+          challenges: {
+            titleText: "CHAT CHALLENGES",
+            emptyText: "No challenges yet",
+            singular: "Challenge",
+            plural: "Challenges",
+          },
+        }[document.getElementById("mode-preset").value];
+
         return {
           debugMode: true,
           streamerName: "streamer",
           moderatorNames: "mod, moderator",
+          titleText: wording.titleText,
+          emptyText: wording.emptyText,
+          themePreset: document.getElementById("theme-preset").value,
+          taskLabelSingular: wording.singular,
+          taskLabelPlural: wording.plural,
+          enableAnimations: document.getElementById("enable-animations").value === "true",
+          animationSpeed: document.getElementById("animation-speed").value,
           panelImage: document.getElementById("panel-image-url").value,
           panelImageOpacity: document.getElementById("panel-image-opacity").value,
           panelImageFit: document.getElementById("panel-image-fit").value,
@@ -315,7 +370,15 @@
         window.TwitchTodoWidget.setPreviewLog(document.getElementById("preview-log"));
         await window.TwitchTodoWidget.init(getPreviewFieldData());
 
-        ["panel-image-url", "panel-image-opacity", "panel-image-fit"].forEach((id) => {
+        [
+          "theme-preset",
+          "mode-preset",
+          "enable-animations",
+          "animation-speed",
+          "panel-image-url",
+          "panel-image-opacity",
+          "panel-image-fit",
+        ].forEach((id) => {
           document.getElementById(id).addEventListener("input", () => {
             window.TwitchTodoWidget.init(getPreviewFieldData());
           });

@@ -64,6 +64,14 @@ _Avoid_: Limit, max tasks
 The stream-visible interface that displays the task list.
 _Avoid_: Widget, panel
 
+**Theme Preset**:
+A field-driven visual style for the task overlay that changes presentation without changing task behavior.
+_Avoid_: Skin, CSS theme
+
+**Quest Mode**:
+Configurable wording that presents tasks as quests, missions, or challenges while keeping the same underlying task model.
+_Avoid_: Quest entity, separate task type
+
 **Task Number**:
 The stable visible number used to refer to a task in chat commands until the task list is reset.
 _Avoid_: Task ID, position, handle
