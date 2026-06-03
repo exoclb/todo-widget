@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Preview Smoke</title>
+    <style>
+      body {
+        margin: 0;
+      }
+
+      iframe {
+        display: block;
+        width: 1000px;
+        height: 900px;
+        border: 0;
+      }
+
+      pre {
+        position: fixed;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 8px;
+        background: #ffffff;
+        color: #111111;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe id="preview-frame" title="Preview smoke frame"></iframe>
+    <pre id="result">RUNNING</pre>
+    <script>
+      const result = document.getElementById("result");
+      const frame = document.getElementById("preview-frame");
+
+      function waitFor(check, message, timeoutMs = 3000) {
+        const startedAt = Date.now();
+        return new Promise((resolve, reject) => {
+          function tick() {
+            try {
+              const value = check();
+              if (value) {
+                resolve(value);
+                return;
+              }
+            } catch (error) {
+              reject(error);
+              return;
+            }
+            if (Date.now() - startedAt > timeoutMs) {
+              reject(new Error(message));
+              return;
+            }
+            setTimeout(tick, 50);
+          }
+          tick();
+        });
+      }
+
+      function click(doc, selector, label) {
+        const element = doc.querySelector(selector);
+        if (!element) throw new Error(`${label} missing`);
+        element.click();
+      }
+
+      function isControlAtPoint(doc, element) {
+        element.scrollIntoView({ block: "center", inline: "center" });
+        const rect = element.getBoundingClientRect();
+        const target = doc.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        const controls = doc.querySelector(".preview-controls");
+        return Boolean(target && controls && controls.contains(target) && !target.closest(".preview-stage"));
+      }
+
+      function canFocus(doc, element) {
+        element.focus();
+        return doc.activeElement === element;
+      }
+
+      (async () => {
+        try {
+          localStorage.clear();
+          frame.src = "../../preview.html";
+          await new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+
+          const doc = frame.contentDocument;
+          const win = frame.contentWindow;
+          await waitFor(() => win.TwitchTodoWidget && doc.getElementById("todo-widget").dataset.theme, "Preview did not initialize");
+
+          const widget = doc.getElementById("todo-widget");
+          const title = doc.getElementById("todo-title");
+          if (!widget || !title || title.textContent.trim().length === 0) throw new Error("Task Overlay is blank");
+
+          const command = doc.getElementById("command");
+          const sendButton = doc.querySelector("#command-form button");
+          const panelImageUrl = doc.getElementById("panel-image-url");
+          if (!isControlAtPoint(doc, command)) throw new Error("Command input is covered");
+          if (!canFocus(doc, command)) throw new Error("Command input cannot receive focus");
+          if (!isControlAtPoint(doc, sendButton)) throw new Error("Send button is covered");
+          if (!isControlAtPoint(doc, panelImageUrl)) throw new Error("Image control is covered");
+          if (!canFocus(doc, panelImageUrl)) throw new Error("Image control cannot receive focus");
+
+          doc.getElementById("role").value = "streamer";
+          command.value = "!task Preview smoke add";
+          doc.getElementById("command-form").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+          await waitFor(() => doc.querySelectorAll(".todo-widget__item").length === 1, "Add command failed");
+
+          command.value = "!task Preview smoke remove";
+          doc.getElementById("command-form").dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+          await waitFor(() => doc.querySelectorAll(".todo-widget__item").length === 2, "Second add command failed");
+
+          click(doc, '[data-action="done-first"]', "Done First button");
+          await waitFor(() => doc.querySelector(".todo-widget__item.is-completed"), "Done command failed");
+
+          click(doc, '[data-action="remove-first"]', "Remove First button");
+          await waitFor(
+            () => ![...doc.querySelectorAll(".todo-widget__item")].some((item) => item.textContent.includes("Preview smoke remove")),
+            "Remove command failed",
+          );
+
+          click(doc, '[data-action="reset"]', "Reset button");
+          await waitFor(() => doc.querySelectorAll(".todo-widget__item").length === 0, "Reset command failed");
+
+          result.textContent = "PASS";
+        } catch (error) {
+          result.textContent = `FAIL: ${error.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>
