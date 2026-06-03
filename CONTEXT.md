@@ -76,6 +76,18 @@ _Avoid_: Quest entity, separate task type
 A field-driven presentation variant that changes the shape of the task overlay while preserving the same task list state and chat commands.
 _Avoid_: Scene, template
 
+**Panel Image**:
+An optional background asset used to brand the task overlay surface without changing task behavior.
+_Avoid_: Wallpaper, skin
+
+**Frame Image**:
+An optional overlay asset used for borders, corners, or stream-package framing around the task overlay.
+_Avoid_: Border theme, wrapper
+
+**Task Icon Image**:
+An optional small asset displayed beside each task for branding or theme flavor.
+_Avoid_: Bullet, emoji
+
 **Task Number**:
 The stable visible number used to refer to a task in chat commands until the task list is reset.
 _Avoid_: Task ID, position, handle

@@ -216,6 +216,46 @@
     },
     "group": "Appearance"
   },
+  "frameImage": {
+    "type": "image-input",
+    "label": "Frame overlay image",
+    "value": "",
+    "group": "Appearance"
+  },
+  "frameImageOpacity": {
+    "type": "slider",
+    "label": "Frame image opacity",
+    "value": 0.55,
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "group": "Appearance"
+  },
+  "frameImageFit": {
+    "type": "dropdown",
+    "label": "Frame image fit",
+    "value": "cover",
+    "options": {
+      "cover": "Cover panel",
+      "contain": "Contain full image"
+    },
+    "group": "Appearance"
+  },
+  "taskIconImage": {
+    "type": "image-input",
+    "label": "Task icon image",
+    "value": "",
+    "group": "Appearance"
+  },
+  "taskIconImageOpacity": {
+    "type": "slider",
+    "label": "Task icon opacity",
+    "value": 1,
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "group": "Appearance"
+  },
   "enableAnimations": {
     "type": "checkbox",
     "label": "Enable animations",

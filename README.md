@@ -25,7 +25,7 @@ http://localhost:8000/preview.html
 ```
 
 The preview includes a mock username, role selector, command input, quick action buttons, and debug log.
-It also includes controls for Theme Presets, Quest Mode wording, and custom panel images.
+It also includes controls for Theme Presets, Quest Mode wording, Layout Modes, animations, panel images, frame images, and task icons.
 
 ## Default Commands
 
@@ -65,11 +65,20 @@ Invalid commands are ignored silently in production. Enable `debugMode` while te
 - Theme Presets include minimal clean, cozy pastel, clean neon HUD, RPG quest board, and VTuber cute.
 - Quest Mode wording can present the same Task List as Tasks, Quests, Missions, or Challenges without changing Task Numbers or Chat Commands.
 - Layout Modes include compact sidebar for gameplay corners, horizontal ticker for top or bottom bars, and large board for chatting or intermission scenes.
-- Optional panel background image supports upload through StreamElements fields, image opacity, and cover/contain fit modes.
+- Optional panel background image, frame overlay image, and task icon image support StreamElements uploads.
+- Panel and frame images include opacity controls and cover/contain fit modes. Task icons include an opacity control and render at a stable task-row size.
 - Animation controls can be enabled or disabled and tuned with an animation speed slider. New tasks animate in, Completed Tasks get a brief completion pulse, and Removed Tasks leave quietly.
 - Completed tasks stay visible briefly, then auto-hide. The default is `5` seconds.
 
 Animations are visual only. Successful commands and Ignored Commands still use Silent Command Handling and never send chat replies.
+
+## Custom Image Guidance
+
+- Leave image fields empty to use the default polished Task Overlay.
+- Use the panel background image for low-contrast texture, pattern, or branded scenery. Keep opacity around `0.15` to `0.35` for readable Task Text.
+- Use the frame overlay image for transparent PNG borders, corners, or stream-package frames. Keep important artwork near the edges so it does not cover Task Text.
+- Use the task icon image for a small brand mark, badge, gem, or checklist symbol beside each task.
+- Prefer transparent PNG/WebP assets for frame and icon images. A `16:9` or `4:3` panel texture usually works well with cover fit, while a full-frame border usually works better with contain fit.
 
 ## StreamElements Setup
 

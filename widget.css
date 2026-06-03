@@ -8,6 +8,11 @@
   --todo-panel-image: none;
   --todo-panel-image-opacity: 0;
   --todo-panel-image-fit: cover;
+  --todo-frame-image: none;
+  --todo-frame-image-opacity: 0;
+  --todo-frame-image-fit: cover;
+  --todo-task-icon-image: none;
+  --todo-task-icon-image-opacity: 0;
   --todo-animation-speed: 1;
   --todo-text: #f4fbff;
   --todo-muted: #9fb4c3;
@@ -84,6 +89,19 @@ body {
   pointer-events: none;
 }
 
+.todo-widget__panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background-image: var(--todo-frame-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: var(--todo-frame-image-fit);
+  opacity: var(--todo-frame-image-opacity);
+  pointer-events: none;
+}
+
 .todo-widget__panel > * {
   position: relative;
   z-index: 1;
@@ -147,12 +165,29 @@ body {
   overflow: hidden;
 }
 
+.todo-widget[data-task-icon="true"] .todo-widget__item {
+  grid-template-columns: 44px 24px minmax(0, 1fr);
+}
+
 .todo-widget__item::before {
   content: "";
   position: absolute;
   inset: 0;
   border-left: 3px solid var(--todo-accent);
   opacity: 0.8;
+  pointer-events: none;
+}
+
+.todo-widget__icon {
+  align-self: start;
+  width: 24px;
+  height: 24px;
+  margin-top: -1px;
+  background-image: var(--todo-task-icon-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: var(--todo-task-icon-image-opacity);
   pointer-events: none;
 }
 
@@ -249,6 +284,15 @@ body {
   grid-template-columns: 38px minmax(0, 1fr);
   min-height: 52px;
   padding: 8px 9px;
+}
+
+.todo-widget[data-layout="ticker"][data-task-icon="true"] .todo-widget__item {
+  grid-template-columns: 38px 22px minmax(0, 1fr);
+}
+
+.todo-widget[data-layout="ticker"] .todo-widget__icon {
+  width: 22px;
+  height: 22px;
 }
 
 .todo-widget[data-layout="ticker"] .todo-widget__text {
@@ -434,6 +478,15 @@ body {
 
   .todo-widget__item {
     grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .todo-widget[data-task-icon="true"] .todo-widget__item {
+    grid-template-columns: 38px 22px minmax(0, 1fr);
+  }
+
+  .todo-widget__icon {
+    width: 22px;
+    height: 22px;
   }
 
   .todo-widget__title,

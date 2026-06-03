@@ -31,6 +31,11 @@
     panelImage: "",
     panelImageOpacity: 0.35,
     panelImageFit: "cover",
+    frameImage: "",
+    frameImageOpacity: 0.55,
+    frameImageFit: "cover",
+    taskIconImage: "",
+    taskIconImageOpacity: 1,
     enableAnimations: true,
     animationSpeed: 1,
     streamerName: "",
@@ -131,6 +136,11 @@
       panelImage: normalizeImageUrl(source.panelImage),
       panelImageOpacity: clampNumber(source.panelImageOpacity, DEFAULT_CONFIG.panelImageOpacity, 0, 1),
       panelImageFit: VALID_IMAGE_FITS.has(source.panelImageFit) ? source.panelImageFit : DEFAULT_CONFIG.panelImageFit,
+      frameImage: normalizeImageUrl(source.frameImage),
+      frameImageOpacity: clampNumber(source.frameImageOpacity, DEFAULT_CONFIG.frameImageOpacity, 0, 1),
+      frameImageFit: VALID_IMAGE_FITS.has(source.frameImageFit) ? source.frameImageFit : DEFAULT_CONFIG.frameImageFit,
+      taskIconImage: normalizeImageUrl(source.taskIconImage),
+      taskIconImageOpacity: clampNumber(source.taskIconImageOpacity, DEFAULT_CONFIG.taskIconImageOpacity, 0, 1),
       enableAnimations: source.enableAnimations !== false && source.enableAnimations !== "false",
       animationSpeed: clampNumber(source.animationSpeed, DEFAULT_CONFIG.animationSpeed, 0.5, 2),
       debugMode: source.debugMode === true || source.debugMode === "true",
@@ -451,6 +461,7 @@
     widget.dataset.layout = state.config.layoutMode;
     widget.dataset.theme = state.config.themePreset;
     widget.dataset.animations = String(state.config.enableAnimations);
+    widget.dataset.taskIcon = String(Boolean(state.config.taskIconImage));
     document.documentElement.style.setProperty("--todo-animation-speed", state.config.animationSpeed);
     document.documentElement.style.setProperty("--todo-font", `"${state.config.fontFamily}", sans-serif`);
     document.documentElement.style.setProperty("--todo-accent", state.config.accentColor);
@@ -462,6 +473,17 @@
       state.config.panelImage ? state.config.panelImageOpacity : 0,
     );
     document.documentElement.style.setProperty("--todo-panel-image-fit", state.config.panelImageFit);
+    document.documentElement.style.setProperty("--todo-frame-image", cssUrl(state.config.frameImage));
+    document.documentElement.style.setProperty(
+      "--todo-frame-image-opacity",
+      state.config.frameImage ? state.config.frameImageOpacity : 0,
+    );
+    document.documentElement.style.setProperty("--todo-frame-image-fit", state.config.frameImageFit);
+    document.documentElement.style.setProperty("--todo-task-icon-image", cssUrl(state.config.taskIconImage));
+    document.documentElement.style.setProperty(
+      "--todo-task-icon-image-opacity",
+      state.config.taskIconImage ? state.config.taskIconImageOpacity : 0,
+    );
   }
 
   function render(stored) {
@@ -514,7 +536,14 @@
     author.textContent = `by ${task.authorName}`;
 
     content.append(text, author);
-    item.append(number, content);
+    if (state.config.taskIconImage) {
+      const icon = document.createElement("div");
+      icon.className = "todo-widget__icon";
+      icon.setAttribute("aria-hidden", "true");
+      item.append(number, icon, content);
+    } else {
+      item.append(number, content);
+    }
     return item;
   }
 

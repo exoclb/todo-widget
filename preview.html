@@ -280,6 +280,35 @@
           </div>
         </div>
 
+        <div class="preview-image-row">
+          <div class="preview-field">
+            <label for="frame-image-url">Frame image URL</label>
+            <input id="frame-image-url" placeholder="https://..." autocomplete="off">
+          </div>
+          <div class="preview-field">
+            <label for="frame-image-opacity">Frame opacity</label>
+            <input id="frame-image-opacity" type="range" min="0" max="1" step="0.01" value="0.55">
+          </div>
+          <div class="preview-field">
+            <label for="frame-image-fit">Frame fit</label>
+            <select id="frame-image-fit">
+              <option value="cover">Cover</option>
+              <option value="contain">Contain</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="preview-row">
+          <div class="preview-field">
+            <label for="task-icon-image-url">Task icon URL</label>
+            <input id="task-icon-image-url" placeholder="https://..." autocomplete="off">
+          </div>
+          <div class="preview-field">
+            <label for="task-icon-image-opacity">Icon opacity</label>
+            <input id="task-icon-image-opacity" type="range" min="0" max="1" step="0.01" value="1">
+          </div>
+        </div>
+
         <div class="preview-actions">
           <button class="preview-button" type="button" data-action="sample">Add Sample</button>
           <button class="preview-button" type="button" data-action="done-first">Done First</button>
@@ -341,6 +370,11 @@
           panelImage: document.getElementById("panel-image-url").value,
           panelImageOpacity: document.getElementById("panel-image-opacity").value,
           panelImageFit: document.getElementById("panel-image-fit").value,
+          frameImage: document.getElementById("frame-image-url").value,
+          frameImageOpacity: document.getElementById("frame-image-opacity").value,
+          frameImageFit: document.getElementById("frame-image-fit").value,
+          taskIconImage: document.getElementById("task-icon-image-url").value,
+          taskIconImageOpacity: document.getElementById("task-icon-image-opacity").value,
         };
       }
 
@@ -389,6 +423,11 @@
           "panel-image-url",
           "panel-image-opacity",
           "panel-image-fit",
+          "frame-image-url",
+          "frame-image-opacity",
+          "frame-image-fit",
+          "task-icon-image-url",
+          "task-icon-image-opacity",
         ].forEach((id) => {
           document.getElementById(id).addEventListener("input", () => {
             window.TwitchTodoWidget.init(getPreviewFieldData());
