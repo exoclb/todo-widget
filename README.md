@@ -64,6 +64,7 @@ Invalid commands are ignored silently in production. Enable `debugMode` while te
 - Configurable title, empty state, Theme Preset, Quest Mode wording, Google Font, accent color, width, opacity, custom panel image, and animations.
 - Theme Presets include minimal clean, cozy pastel, clean neon HUD, RPG quest board, and VTuber cute.
 - Quest Mode wording can present the same Task List as Tasks, Quests, Missions, or Challenges without changing Task Numbers or Chat Commands.
+- Layout Modes include compact sidebar for gameplay corners, horizontal ticker for top or bottom bars, and large board for chatting or intermission scenes.
 - Optional panel background image supports upload through StreamElements fields, image opacity, and cover/contain fit modes.
 - Animation controls can be enabled or disabled and tuned with an animation speed slider. New tasks animate in, Completed Tasks get a brief completion pulse, and Removed Tasks leave quietly.
 - Completed tasks stay visible briefly, then auto-hide. The default is `5` seconds.

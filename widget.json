@@ -125,6 +125,17 @@
     },
     "group": "Appearance"
   },
+  "layoutMode": {
+    "type": "dropdown",
+    "label": "Layout mode",
+    "value": "compact",
+    "options": {
+      "compact": "Compact sidebar",
+      "ticker": "Horizontal ticker",
+      "board": "Large board"
+    },
+    "group": "Appearance"
+  },
   "themePreset": {
     "type": "dropdown",
     "label": "Theme preset",
@@ -167,7 +178,7 @@
     "label": "Max width px",
     "value": 360,
     "min": 260,
-    "max": 520,
+    "max": 900,
     "step": 10,
     "group": "Appearance"
   },

@@ -19,6 +19,7 @@
     blacklistWords: "",
     debugMode: false,
     position: "top-right",
+    layoutMode: "compact",
     theme: "neon",
     themePreset: "neon",
     taskLabelSingular: "Task",
@@ -37,6 +38,7 @@
 
   const VALID_THEMES = new Set(["minimal", "cozy", "neon", "quest", "vtuber", "mono", "pixel"]);
   const VALID_POSITIONS = new Set(["top-left", "top-right", "bottom-left", "bottom-right"]);
+  const VALID_LAYOUT_MODES = new Set(["compact", "ticker", "board"]);
   const VALID_IMAGE_FITS = new Set(["cover", "contain"]);
   const state = {
     config: { ...DEFAULT_CONFIG },
@@ -93,8 +95,14 @@
     return label || fallback;
   }
 
+  function resolveMaxWidth(source, layoutMode) {
+    const fallback = layoutMode === "compact" ? DEFAULT_CONFIG.maxWidth : 720;
+    return clampNumber(source.maxWidth, fallback, 260, 900);
+  }
+
   function buildConfig(fieldData) {
     const source = fieldData || {};
+    const layoutMode = VALID_LAYOUT_MODES.has(source.layoutMode) ? source.layoutMode : DEFAULT_CONFIG.layoutMode;
     return {
       ...DEFAULT_CONFIG,
       ...source,
@@ -111,13 +119,14 @@
       userCooldownSeconds: clampNumber(source.userCooldownSeconds, DEFAULT_CONFIG.userCooldownSeconds, 0, 300),
       completedVisibleSeconds: clampNumber(source.completedVisibleSeconds, DEFAULT_CONFIG.completedVisibleSeconds, 1, 30),
       position: VALID_POSITIONS.has(source.position) ? source.position : DEFAULT_CONFIG.position,
+      layoutMode,
       theme: normalizeThemePreset(source),
       themePreset: normalizeThemePreset(source),
       taskLabelSingular: normalizeLabel(source.taskLabelSingular, DEFAULT_CONFIG.taskLabelSingular),
       taskLabelPlural: normalizeLabel(source.taskLabelPlural, DEFAULT_CONFIG.taskLabelPlural),
       fontFamily: String(source.fontFamily || DEFAULT_CONFIG.fontFamily).trim() || DEFAULT_CONFIG.fontFamily,
       accentColor: String(source.accentColor || DEFAULT_CONFIG.accentColor).trim() || DEFAULT_CONFIG.accentColor,
-      maxWidth: clampNumber(source.maxWidth, DEFAULT_CONFIG.maxWidth, 260, 520),
+      maxWidth: resolveMaxWidth(source, layoutMode),
       backgroundOpacity: clampNumber(source.backgroundOpacity, DEFAULT_CONFIG.backgroundOpacity, 0, 1),
       panelImage: normalizeImageUrl(source.panelImage),
       panelImageOpacity: clampNumber(source.panelImageOpacity, DEFAULT_CONFIG.panelImageOpacity, 0, 1),
@@ -439,6 +448,7 @@
     const widget = document.getElementById("todo-widget");
     if (!widget) return;
     widget.dataset.position = state.config.position;
+    widget.dataset.layout = state.config.layoutMode;
     widget.dataset.theme = state.config.themePreset;
     widget.dataset.animations = String(state.config.enableAnimations);
     document.documentElement.style.setProperty("--todo-animation-speed", state.config.animationSpeed);

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Layout Smoke</title>
+    <link rel="stylesheet" href="../../widget.css">
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <div id="todo-widget" class="todo-widget" aria-live="polite">
+      <div class="todo-widget__panel">
+        <header class="todo-widget__header">
+          <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+          <div class="todo-widget__counter" id="todo-counter">0/10</div>
+        </header>
+        <ol class="todo-widget__list" id="todo-list"></ol>
+        <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+      </div>
+    </div>
+    <pre id="result">RUNNING</pre>
+    <script src="../../widget.js"></script>
+    <script>
+      (async () => {
+        const result = document.getElementById("result");
+        const streamer = {
+          displayName: "streamer",
+          username: "streamer",
+          authorId: "streamer",
+          badges: [{ type: "broadcaster" }],
+          roles: ["streamer"],
+        };
+
+        try {
+          localStorage.clear();
+          await window.TwitchTodoWidget.init({
+            layoutMode: "compact",
+            streamerName: "streamer",
+            globalCooldownSeconds: 0,
+            userCooldownSeconds: 0,
+          });
+          await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Check camera framing" });
+          await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Review scene audio" });
+
+          for (const layoutMode of ["compact", "ticker", "board"]) {
+            await window.TwitchTodoWidget.init({ layoutMode, streamerName: "streamer" });
+            const widget = document.getElementById("todo-widget");
+            const items = [...document.querySelectorAll(".todo-widget__item")];
+            const numbers = items.map((item) => item.querySelector(".todo-widget__number").textContent).join(",");
+            const authors = items.map((item) => item.querySelector(".todo-widget__author").textContent).join(",");
+            if (widget.dataset.layout !== layoutMode) throw new Error(`Layout failed: ${layoutMode}`);
+            if (items.length !== 2) throw new Error(`Task state changed in ${layoutMode}`);
+            if (numbers !== "#1,#2") throw new Error(`Task Numbers changed in ${layoutMode}`);
+            if (!authors.includes("by streamer")) throw new Error(`Task Owner missing in ${layoutMode}`);
+            if (getComputedStyle(widget).maxWidth === "none") throw new Error(`Max width missing in ${layoutMode}`);
+          }
+
+          result.textContent = "PASS";
+        } catch (error) {
+          result.textContent = `FAIL: ${error.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>

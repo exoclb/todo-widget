@@ -239,6 +239,15 @@
           </div>
         </div>
 
+        <div class="preview-field">
+          <label for="layout-mode">Layout mode</label>
+          <select id="layout-mode">
+            <option value="compact" selected>Compact sidebar</option>
+            <option value="ticker">Horizontal ticker</option>
+            <option value="board">Large board</option>
+          </select>
+        </div>
+
         <div class="preview-row">
           <div class="preview-field">
             <label for="enable-animations">Animations</label>
@@ -323,6 +332,7 @@
           moderatorNames: "mod, moderator",
           titleText: wording.titleText,
           emptyText: wording.emptyText,
+          layoutMode: document.getElementById("layout-mode").value,
           themePreset: document.getElementById("theme-preset").value,
           taskLabelSingular: wording.singular,
           taskLabelPlural: wording.plural,
@@ -373,6 +383,7 @@
         [
           "theme-preset",
           "mode-preset",
+          "layout-mode",
           "enable-animations",
           "animation-speed",
           "panel-image-url",

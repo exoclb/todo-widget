@@ -72,6 +72,10 @@ _Avoid_: Skin, CSS theme
 Configurable wording that presents tasks as quests, missions, or challenges while keeping the same underlying task model.
 _Avoid_: Quest entity, separate task type
 
+**Layout Mode**:
+A field-driven presentation variant that changes the shape of the task overlay while preserving the same task list state and chat commands.
+_Avoid_: Scene, template
+
 **Task Number**:
 The stable visible number used to refer to a task in chat commands until the task list is reset.
 _Avoid_: Task ID, position, handle
