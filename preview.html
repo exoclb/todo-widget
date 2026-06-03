@@ -250,6 +250,37 @@
 
         <div class="preview-row">
           <div class="preview-field">
+            <label for="enable-voting">Voting mode</label>
+            <select id="enable-voting">
+              <option value="false" selected>Disabled</option>
+              <option value="true">Enabled</option>
+            </select>
+          </div>
+          <div class="preview-field">
+            <label for="vote-priority-sort">Vote sort</label>
+            <select id="vote-priority-sort">
+              <option value="false" selected>Off</option>
+              <option value="true">On</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="preview-row">
+          <div class="preview-field">
+            <label for="vote-duplicate-behavior">Duplicate votes</label>
+            <select id="vote-duplicate-behavior">
+              <option value="ignore" selected>Ignore</option>
+              <option value="change">Change vote</option>
+            </select>
+          </div>
+          <div class="preview-field">
+            <label for="vote-cooldown-seconds">Vote cooldown</label>
+            <input id="vote-cooldown-seconds" type="number" min="0" max="300" step="1" value="0">
+          </div>
+        </div>
+
+        <div class="preview-row">
+          <div class="preview-field">
             <label for="enable-animations">Animations</label>
             <select id="enable-animations">
               <option value="true" selected>Enabled</option>
@@ -312,6 +343,8 @@
         <div class="preview-actions">
           <button class="preview-button" type="button" data-action="sample">Add Sample</button>
           <button class="preview-button" type="button" data-action="done-first">Done First</button>
+          <button class="preview-button" type="button" data-action="vote-first">Vote First</button>
+          <button class="preview-button" type="button" data-action="vote-second">Vote Second</button>
           <button class="preview-button" type="button" data-action="remove-first">Remove First</button>
           <button class="preview-button" type="button" data-action="fill">Fill To Max</button>
           <button class="preview-button" type="button" data-action="reset">Reset</button>
@@ -365,6 +398,10 @@
           themePreset: document.getElementById("theme-preset").value,
           taskLabelSingular: wording.singular,
           taskLabelPlural: wording.plural,
+          enableVoting: document.getElementById("enable-voting").value === "true",
+          voteCooldownSeconds: document.getElementById("vote-cooldown-seconds").value,
+          voteDuplicateBehavior: document.getElementById("vote-duplicate-behavior").value,
+          votePrioritySort: document.getElementById("vote-priority-sort").value === "true",
           enableAnimations: document.getElementById("enable-animations").value === "true",
           animationSpeed: document.getElementById("animation-speed").value,
           panelImage: document.getElementById("panel-image-url").value,
@@ -418,6 +455,10 @@
           "theme-preset",
           "mode-preset",
           "layout-mode",
+          "enable-voting",
+          "vote-priority-sort",
+          "vote-duplicate-behavior",
+          "vote-cooldown-seconds",
           "enable-animations",
           "animation-speed",
           "panel-image-url",
@@ -450,6 +491,15 @@
             if (action === "done-first") {
               const id = await getFirstActiveId();
               if (id) await sendMockMessage(`!done ${id}`);
+            }
+            if (action === "vote-first") {
+              const id = await getFirstActiveId();
+              if (id) await sendMockMessage(`!vote ${id}`);
+            }
+            if (action === "vote-second") {
+              const stored = await window.TwitchTodoWidget.getState();
+              const active = stored.tasks.filter((task) => task.status === "active");
+              if (active[1]) await sendMockMessage(`!vote ${active[1].id}`);
             }
             if (action === "remove-first") {
               const id = await getFirstActiveId();

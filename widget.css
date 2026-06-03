@@ -216,12 +216,36 @@ body {
   -webkit-line-clamp: 2;
 }
 
-.todo-widget__author {
+.todo-widget__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin-top: 4px;
+  min-width: 0;
+}
+
+.todo-widget__author {
+  min-width: 0;
   overflow: hidden;
   color: var(--todo-muted);
   font-size: 12px;
   font-weight: 600;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todo-widget__votes {
+  flex: 0 0 auto;
+  max-width: 82px;
+  overflow: hidden;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: var(--todo-accent);
+  font-size: 11px;
+  font-weight: 700;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;

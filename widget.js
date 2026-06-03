@@ -9,6 +9,11 @@
     doneCommand: "!done",
     deleteCommand: "!delete",
     resetCommand: "!taskreset",
+    enableVoting: false,
+    voteCommand: "!vote",
+    voteCooldownSeconds: 10,
+    voteDuplicateBehavior: "ignore",
+    votePrioritySort: false,
     maxTasks: 10,
     maxTaskLength: 80,
     perUserTaskLimit: 2,
@@ -45,6 +50,7 @@
   const VALID_POSITIONS = new Set(["top-left", "top-right", "bottom-left", "bottom-right"]);
   const VALID_LAYOUT_MODES = new Set(["compact", "ticker", "board"]);
   const VALID_IMAGE_FITS = new Set(["cover", "contain"]);
+  const VALID_VOTE_DUPLICATE_BEHAVIORS = new Set(["ignore", "change"]);
   const state = {
     config: { ...DEFAULT_CONFIG },
     storage: null,
@@ -52,6 +58,7 @@
     cleanupTimer: null,
     globalCooldownUntil: 0,
     userCooldowns: new Map(),
+    voteCooldowns: new Map(),
     renderedTaskStatuses: new Map(),
     hasRenderedTasks: false,
     previewLog: null,
@@ -117,6 +124,13 @@
       doneCommand: normalizeCommand(source.doneCommand, DEFAULT_CONFIG.doneCommand),
       deleteCommand: normalizeCommand(source.deleteCommand, DEFAULT_CONFIG.deleteCommand),
       resetCommand: normalizeCommand(source.resetCommand, DEFAULT_CONFIG.resetCommand),
+      enableVoting: source.enableVoting === true || source.enableVoting === "true",
+      voteCommand: normalizeCommand(source.voteCommand, DEFAULT_CONFIG.voteCommand),
+      voteCooldownSeconds: clampNumber(source.voteCooldownSeconds, DEFAULT_CONFIG.voteCooldownSeconds, 0, 300),
+      voteDuplicateBehavior: VALID_VOTE_DUPLICATE_BEHAVIORS.has(source.voteDuplicateBehavior)
+        ? source.voteDuplicateBehavior
+        : DEFAULT_CONFIG.voteDuplicateBehavior,
+      votePrioritySort: source.votePrioritySort === true || source.votePrioritySort === "true",
       maxTasks: clampNumber(source.maxTasks, DEFAULT_CONFIG.maxTasks, 1, 20),
       maxTaskLength: clampNumber(source.maxTaskLength, DEFAULT_CONFIG.maxTaskLength, 10, 160),
       perUserTaskLimit: clampNumber(source.perUserTaskLimit, DEFAULT_CONFIG.perUserTaskLimit, 1, 10),
@@ -207,14 +221,41 @@
           status: task.status === "completed" ? "completed" : "active",
           createdAt: Number(task.createdAt) || Date.now(),
           completedAt: task.completedAt ? Number(task.completedAt) : null,
+          votes: normalizeVotes(task.votes),
         }))
         .filter((task) => Number.isInteger(task.id) && task.id > 0 && task.text),
       nextId,
     };
   }
 
+  function normalizeVotes(votes) {
+    if (!votes || typeof votes !== "object" || Array.isArray(votes)) return {};
+    return Object.fromEntries(
+      Object.entries(votes)
+        .filter(([voterKey]) => voterKey)
+        .map(([voterKey, vote]) => {
+          const value = vote && typeof vote === "object" ? vote : {};
+          return [
+            String(voterKey),
+            {
+              voterName: String(value.voterName || "viewer"),
+              votedAt: Number(value.votedAt) || Date.now(),
+            },
+          ];
+        }),
+    );
+  }
+
   function getActiveTasks(tasks) {
     return tasks.filter((task) => task.status === "active");
+  }
+
+  function getVoteCount(task) {
+    return Object.keys(task.votes || {}).length;
+  }
+
+  function findVotedTask(tasks, userKey) {
+    return tasks.find((task) => task.status === "active" && task.votes && task.votes[userKey]);
   }
 
   function cleanupExpiredTasks(storedState, now) {
@@ -337,13 +378,12 @@
     if (!parsed) return;
 
     const commands = state.config;
-    const commandHandlers = {
-      [commands.addCommand]: addTask,
-      [commands.doneCommand]: completeTask,
-      [commands.deleteCommand]: removeTask,
-      [commands.resetCommand]: resetTasks,
-    };
-    const handler = commandHandlers[parsed.command];
+    let handler = null;
+    if (parsed.command === commands.addCommand) handler = addTask;
+    if (parsed.command === commands.doneCommand) handler = completeTask;
+    if (parsed.command === commands.deleteCommand) handler = removeTask;
+    if (parsed.command === commands.resetCommand) handler = resetTasks;
+    if (parsed.command === commands.voteCommand && !handler) handler = voteTask;
     if (!handler) return;
 
     const stored = cleanupExpiredTasks(await state.storage.get(), Date.now());
@@ -390,6 +430,7 @@
             status: "active",
             createdAt: now,
             completedAt: null,
+            votes: {},
           },
         ],
         nextId: stored.nextId + 1,
@@ -431,6 +472,44 @@
   async function resetTasks(stored, idText, user) {
     if (!isAdmin(user)) return { reason: "not_admin" };
     return { nextState: { tasks: [], nextId: 1 } };
+  }
+
+  async function voteTask(stored, idText, user) {
+    if (!state.config.enableVoting) return { reason: "voting_disabled" };
+    if (!String(idText || "").trim()) return { reason: "missing_task_number" };
+    const id = Number(idText);
+    if (!Number.isInteger(id)) return { reason: "invalid_id" };
+
+    const userKey = getUserKey(user);
+    if (!userKey) return { reason: "missing_user" };
+
+    const now = Date.now();
+    const voteCooldownUntil = state.voteCooldowns.get(userKey) || 0;
+    if (now < voteCooldownUntil) return { reason: "vote_cooldown" };
+
+    const target = stored.tasks.find((task) => task.id === id);
+    if (!target || target.status !== "active") return { reason: "task_not_active" };
+
+    const votedTask = findVotedTask(stored.tasks, userKey);
+    if (votedTask && votedTask.id === id) return { reason: "duplicate_vote" };
+    if (votedTask && state.config.voteDuplicateBehavior === "ignore") return { reason: "duplicate_vote" };
+
+    const tasks = stored.tasks.map((task) => {
+      const votes = { ...(task.votes || {}) };
+      if (state.config.voteDuplicateBehavior === "change" && votes[userKey]) {
+        delete votes[userKey];
+      }
+      if (task.id === id) {
+        votes[userKey] = {
+          voterName: user.displayName || user.username || "viewer",
+          votedAt: now,
+        };
+      }
+      return { ...task, votes };
+    });
+
+    state.voteCooldowns.set(userKey, now + state.config.voteCooldownSeconds * 1000);
+    return { nextState: { ...stored, tasks } };
   }
 
   function scheduleCleanup(stored) {
@@ -495,7 +574,7 @@
     const empty = document.getElementById("todo-empty");
     if (!widget || !title || !counter || !list || !empty) return;
 
-    const orderedTasks = [...stored.tasks].sort((a, b) => a.createdAt - b.createdAt);
+    const orderedTasks = getOrderedTasks(stored.tasks);
     const previousStatuses = new Map(state.renderedTaskStatuses);
     const activeCount = getActiveTasks(stored.tasks).length;
     const counterLabel = activeCount === 1 ? state.config.taskLabelSingular : state.config.taskLabelPlural;
@@ -507,6 +586,18 @@
     list.replaceChildren(...orderedTasks.map((task) => createTaskElement(task, previousStatuses)));
     state.renderedTaskStatuses = new Map(orderedTasks.map((task) => [task.id, task.status]));
     state.hasRenderedTasks = true;
+  }
+
+  function getOrderedTasks(tasks) {
+    const byCreatedAt = (a, b) => a.createdAt - b.createdAt || a.id - b.id;
+    if (!state.config.enableVoting || !state.config.votePrioritySort) {
+      return [...tasks].sort(byCreatedAt);
+    }
+    return [...tasks].sort((a, b) => {
+      if (a.status !== b.status) return a.status === "active" ? -1 : 1;
+      if (a.status !== "active") return byCreatedAt(a, b);
+      return getVoteCount(b) - getVoteCount(a) || byCreatedAt(a, b);
+    });
   }
 
   function createTaskElement(task, previousStatuses) {
@@ -535,7 +626,19 @@
     author.className = "todo-widget__author";
     author.textContent = `by ${task.authorName}`;
 
-    content.append(text, author);
+    const meta = document.createElement("div");
+    meta.className = "todo-widget__meta";
+    meta.append(author);
+
+    if (state.config.enableVoting) {
+      const votes = document.createElement("div");
+      votes.className = "todo-widget__votes";
+      const voteCount = getVoteCount(task);
+      votes.textContent = `${voteCount} ${voteCount === 1 ? "vote" : "votes"}`;
+      meta.append(votes);
+    }
+
+    content.append(text, meta);
     if (state.config.taskIconImage) {
       const icon = document.createElement("div");
       icon.className = "todo-widget__icon";

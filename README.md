@@ -43,6 +43,7 @@ The command validates `widget.json`, starts a temporary local preview server, an
 - `!done <id>` completes a task.
 - `!delete <id>` removes a task.
 - `!taskreset` clears all tasks and resets numbering to `#1`.
+- `!vote <id>` votes for an active task when Voting Mode is enabled.
 
 All command names are configurable in StreamElements fields and are matched case-insensitively.
 
@@ -68,6 +69,18 @@ Task Managers are the streamer and moderators by default. The widget detects mod
 
 Invalid commands are ignored silently in production. Enable `debugMode` while testing if you need console logs.
 
+## Voting Mode
+
+Voting Mode is optional and disabled by default. When enabled, Viewers can vote for Active Tasks with the configured vote command, defaulting to `!vote <Task Number>`.
+
+- Vote commands are Ignored Commands while Voting Mode is disabled.
+- Each Viewer has one active vote across the Task List.
+- Duplicate vote behavior can either ignore later votes or move the Viewer vote to a new Active Task.
+- Vote cooldown limits how quickly the same Viewer can cast or change a vote.
+- Optional priority sort can move higher-voted Active Tasks earlier visually.
+- Task Numbers remain stable even when vote priority sort changes the visual order. Use the visible number, such as `#7`, with `!done 7`, `!delete 7`, and `!vote 7`.
+- Task Managers can still complete, remove, and reset Tasks regardless of vote counts.
+
 ## Display
 
 - Compact vertical list with configurable corner position.
@@ -75,6 +88,7 @@ Invalid commands are ignored silently in production. Enable `debugMode` while te
 - Theme Presets include minimal clean, cozy pastel, clean neon HUD, RPG quest board, and VTuber cute.
 - Quest Mode wording can present the same Task List as Tasks, Quests, Missions, or Challenges without changing Task Numbers or Chat Commands.
 - Layout Modes include compact sidebar for gameplay corners, horizontal ticker for top or bottom bars, and large board for chatting or intermission scenes.
+- Voting Mode can show vote counts beside Task Owners and optionally sort Active Tasks by vote count.
 - Optional panel background image, frame overlay image, and task icon image support StreamElements uploads.
 - Panel and frame images include opacity controls and cover/contain fit modes. Task icons include an opacity control and render at a stable task-row size.
 - Animation controls can be enabled or disabled and tuned with an animation speed slider. New tasks animate in, Completed Tasks get a brief completion pulse, and Removed Tasks leave quietly.

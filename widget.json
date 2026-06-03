@@ -35,6 +35,43 @@
     "value": "!taskreset",
     "group": "Commands"
   },
+  "enableVoting": {
+    "type": "checkbox",
+    "label": "Enable voting mode",
+    "value": false,
+    "group": "Voting"
+  },
+  "voteCommand": {
+    "type": "text",
+    "label": "Vote command",
+    "value": "!vote",
+    "group": "Voting"
+  },
+  "voteCooldownSeconds": {
+    "type": "number",
+    "label": "Vote cooldown seconds",
+    "value": 10,
+    "min": 0,
+    "max": 300,
+    "step": 1,
+    "group": "Voting"
+  },
+  "voteDuplicateBehavior": {
+    "type": "dropdown",
+    "label": "Duplicate vote behavior",
+    "value": "ignore",
+    "options": {
+      "ignore": "Ignore later votes",
+      "change": "Move vote to new task"
+    },
+    "group": "Voting"
+  },
+  "votePrioritySort": {
+    "type": "checkbox",
+    "label": "Sort active tasks by votes",
+    "value": false,
+    "group": "Voting"
+  },
   "maxTasks": {
     "type": "number",
     "label": "Max active tasks",

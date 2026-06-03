@@ -88,6 +88,18 @@ _Avoid_: Border theme, wrapper
 An optional small asset displayed beside each task for branding or theme flavor.
 _Avoid_: Bullet, emoji
 
+**Voting Mode**:
+An optional task overlay mode where viewers can vote for active tasks through a chat command.
+_Avoid_: Poll mode, ranking mode
+
+**Task Vote**:
+A viewer's persisted preference for one active task in Voting Mode.
+_Avoid_: Like, upvote
+
+**Vote Priority Sort**:
+An optional visual ordering rule that places higher-voted active tasks earlier without changing task numbers.
+_Avoid_: Re-numbering, vote ranking
+
 **Task Number**:
 The stable visible number used to refer to a task in chat commands until the task list is reset.
 _Avoid_: Task ID, position, handle
