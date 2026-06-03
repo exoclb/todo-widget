@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Widget Shot</title>
+    <link rel="stylesheet" href="../widget.css">
+    <style>
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 18px;
+        background:
+          radial-gradient(circle at 18% 18%, rgba(255, 196, 88, 0.22), transparent 30%),
+          radial-gradient(circle at 82% 24%, rgba(41, 244, 255, 0.2), transparent 30%),
+          linear-gradient(135deg, #18202a 0%, #253041 48%, #141922 100%);
+        overflow: hidden;
+      }
+
+      .shot-slot {
+        width: 100%;
+      }
+    </style>
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <div class="shot-slot">
+      <div id="todo-widget" class="todo-widget" aria-live="polite">
+        <div class="todo-widget__panel">
+          <header class="todo-widget__header">
+            <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+            <div class="todo-widget__counter" id="todo-counter">0/10</div>
+          </header>
+          <ol class="todo-widget__list" id="todo-list"></ol>
+          <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+        </div>
+      </div>
+    </div>
+    <script src="../widget.js"></script>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const themePreset = params.get("theme") || "neon";
+      const layoutMode = params.get("layout") || "compact";
+      const mode = params.get("mode") || "tasks";
+      const voting = params.get("voting") === "true";
+      const wording = {
+        tasks: { titleText: "STREAM TASKS", singular: "Task", plural: "Tasks" },
+        quests: { titleText: "QUEST BOARD", singular: "Quest", plural: "Quests" },
+        missions: { titleText: "LIVE MISSIONS", singular: "Mission", plural: "Missions" },
+      }[mode];
+
+      const streamer = {
+        displayName: "streamer",
+        username: "streamer",
+        authorId: "streamer",
+        badges: [{ type: "broadcaster" }],
+        roles: ["streamer"],
+      };
+
+      function viewer(name) {
+        return {
+          displayName: name,
+          username: name,
+          authorId: name,
+          badges: [],
+          roles: [],
+        };
+      }
+
+      (async () => {
+        localStorage.clear();
+        await window.TwitchTodoWidget.init({
+          titleText: wording.titleText,
+          emptyText: `No ${wording.plural.toLowerCase()} yet`,
+          taskLabelSingular: wording.singular,
+          taskLabelPlural: wording.plural,
+          themePreset,
+          layoutMode,
+          maxWidth: layoutMode === "compact" ? 360 : 760,
+          streamerName: "streamer",
+          globalCooldownSeconds: 0,
+          userCooldownSeconds: 0,
+          enableVoting: voting,
+          votePrioritySort: voting,
+          voteDuplicateBehavior: "change",
+          voteCooldownSeconds: 0,
+        });
+
+        await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Check mic levels" });
+        await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Pick next challenge" });
+        await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Review chat suggestions" });
+
+        if (voting) {
+          await window.TwitchTodoWidget.enqueueCommand({ ...viewer("viewer-one"), message: "!vote 2" });
+          await window.TwitchTodoWidget.enqueueCommand({ ...viewer("viewer-two"), message: "!vote 2" });
+          await window.TwitchTodoWidget.enqueueCommand({ ...viewer("viewer-three"), message: "!vote 3" });
+        }
+      })();
+    </script>
+  </body>
+</html>

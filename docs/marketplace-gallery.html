@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Twitch Todo Widget Gallery</title>
+    <style>
+      body {
+        margin: 0;
+        background: #10141c;
+        color: #f7fbff;
+        font-family: Georgia, "Times New Roman", serif;
+        overflow: hidden;
+      }
+
+      .gallery {
+        display: grid;
+        gap: 18px;
+        padding: 24px;
+      }
+
+      .gallery__header {
+        display: grid;
+        gap: 8px;
+      }
+
+      .gallery__title {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1;
+      }
+
+      .gallery__subtitle {
+        margin: 0;
+        color: #b9c7d4;
+        font-size: 16px;
+      }
+
+      .gallery__grid {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 18px;
+      }
+
+      .gallery__card {
+        display: grid;
+        gap: 8px;
+      }
+
+      .gallery__label {
+        color: #b9c7d4;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      iframe {
+        width: 100%;
+        height: 320px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        background: #18202a;
+      }
+
+      .gallery__card--wide iframe {
+        height: 320px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="gallery">
+      <header class="gallery__header">
+        <h1 class="gallery__title">Twitch Todo Widget</h1>
+        <p class="gallery__subtitle">StreamElements task overlay with themes, layout modes, Voting Mode, and custom branding controls.</p>
+      </header>
+      <section class="gallery__grid" aria-label="Widget visual examples">
+        <article class="gallery__card">
+          <div class="gallery__label">Compact neon HUD</div>
+          <iframe title="Compact neon widget" src="widget-shot.html?theme=neon&layout=compact&mode=tasks"></iframe>
+        </article>
+        <article class="gallery__card gallery__card--wide">
+          <div class="gallery__label">Quest board with vote priority</div>
+          <iframe title="Quest board widget" src="widget-shot.html?theme=quest&layout=board&mode=quests&voting=true"></iframe>
+        </article>
+        <article class="gallery__card">
+          <div class="gallery__label">VTuber compact mode</div>
+          <iframe title="VTuber compact widget" src="widget-shot.html?theme=vtuber&layout=compact&mode=missions&voting=true"></iframe>
+        </article>
+        <article class="gallery__card gallery__card--wide">
+          <div class="gallery__label">Horizontal ticker layout</div>
+          <iframe title="Ticker widget" src="widget-shot.html?theme=minimal&layout=ticker&mode=tasks"></iframe>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

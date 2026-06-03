@@ -2,6 +2,38 @@
 
 A StreamElements custom widget for Twitch streamers. Viewers can add tasks from chat, Task Owners can complete or remove their own tasks, and Task Managers can manage the list with override commands.
 
+Built for live streams that need a lightweight task, quest, mission, or challenge overlay driven by Twitch chat. The widget is copy-paste friendly for StreamElements and includes local preview plus smoke tests for safer setup.
+
+![Twitch Todo Widget visual presets and layout modes](docs/assets/marketplace-gallery.png)
+
+## Implemented Features
+
+- Chat-driven Task List with configurable add, complete, remove, reset, and vote commands.
+- Stable Task Numbers for `!done`, `!delete`, and `!vote`, even when visual sort changes.
+- Task Owner and Task Manager permissions for predictable moderation.
+- Optional Voting Mode with cooldowns, duplicate vote handling, vote counts, and priority sort.
+- Theme Presets: minimal clean, cozy pastel, clean neon HUD, RPG quest board, and VTuber cute.
+- Layout Modes: compact sidebar, horizontal ticker, and large board.
+- Quest/Mission/Challenge wording controls without changing the underlying Task model.
+- Custom panel, frame, and task icon images with opacity and fit controls.
+- Animation controls for new and completed tasks, with reduced-motion support.
+- StreamElements storage persistence with localStorage fallback for local preview.
+
+## Known Limitations
+
+- Twitch Channel Points integration is not implemented.
+- There is no external dashboard or database; live control happens through Chat Commands.
+- The widget does not send chat replies. Successes and Ignored Commands are silent by design.
+- Task editing after creation is not implemented.
+- Screenshot/demo media should be reviewed by a human before marketplace-style publishing.
+
+## Planned Future Ideas
+
+- Channel Points triggers.
+- Optional approval queue before Tasks become Active Tasks.
+- More theme packs and marketplace-ready image presets.
+- Deeper visual regression coverage.
+
 ## Files
 
 - `widget.html` goes in the StreamElements HTML tab.
@@ -104,10 +136,51 @@ Animations are visual only. Successful commands and Ignored Commands still use S
 - Use the task icon image for a small brand mark, badge, gem, or checklist symbol beside each task.
 - Prefer transparent PNG/WebP assets for frame and icon images. A `16:9` or `4:3` panel texture usually works well with cover fit, while a full-frame border usually works better with contain fit.
 
+## Example Configurations
+
+### Clean Gameplay Sidebar
+
+- Theme Preset: `Clean neon HUD` or `Minimal clean`
+- Layout Mode: `Compact sidebar`
+- Position: `Top right`
+- Voting Mode: `Disabled`
+- Background opacity: `0.70` to `0.85`
+- Animations: `Enabled`, speed near `1`
+
+Use this for gameplay scenes where the Task Overlay should stay readable without taking over the screen.
+
+### Chatting Quest Board
+
+- Theme Preset: `RPG quest board`
+- Layout Mode: `Large board`
+- Wording: Quests or Missions
+- Voting Mode: `Enabled`
+- Duplicate vote behavior: `Move vote to new task`
+- Vote priority sort: `On`
+
+Use this for intermission, chatting, challenge streams, or community-driven segments where viewer priority matters.
+
+### Branded VTuber Overlay
+
+- Theme Preset: `VTuber cute`
+- Layout Mode: `Compact sidebar` or `Horizontal ticker`
+- Panel image: low-contrast brand texture
+- Frame image: transparent overlay-pack frame
+- Task icon image: small mascot mark, badge, or channel symbol
+- Panel image opacity: `0.15` to `0.35`
+
+Use this when the widget needs to match a stream package or character-led visual identity.
+
 ## StreamElements Setup
 
 1. Create a custom widget in your StreamElements overlay.
 2. Paste each `widget.*` file into the matching editor tab.
 3. Paste `widget.json` into the Fields tab.
-4. Set your preferred theme, position, moderator fallback names, and command names.
-5. Test with chat commands while `debugMode` is enabled, then turn it off for production.
+4. Configure Fields: theme, layout, wording, commands, limits, voting, and image settings.
+5. Add fallback streamer and moderator names if badge detection is not available in your test environment.
+6. Test with local preview first, then test inside StreamElements while `debugMode` is enabled.
+7. Turn `debugMode` off for production.
+
+## Debug Mode
+
+Enable `debugMode` only while testing. It logs Ignored Commands, configuration, and command parsing details in the browser console or local preview log. Keep it disabled during normal streams to avoid noisy console output.
