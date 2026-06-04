@@ -11,9 +11,11 @@
         margin: 0;
         padding: 18px;
         background:
-          radial-gradient(circle at 18% 18%, rgba(255, 196, 88, 0.22), transparent 30%),
-          radial-gradient(circle at 82% 24%, rgba(41, 244, 255, 0.2), transparent 30%),
-          linear-gradient(135deg, #18202a 0%, #253041 48%, #141922 100%);
+          linear-gradient(135deg, rgba(63, 125, 246, 0.12) 0 25%, transparent 25% 50%, rgba(255, 184, 77, 0.16) 50% 75%, transparent 75%),
+          linear-gradient(145deg, #f9fbff 0%, #e7edf6 52%, #f6f0e5 100%);
+        background-size:
+          46px 46px,
+          auto;
         overflow: hidden;
       }
 
@@ -41,7 +43,7 @@
     <script src="../widget.js"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
-      const themePreset = params.get("theme") || "neon";
+      const themePreset = params.get("theme") || "material-light";
       const layoutMode = params.get("layout") || "compact";
       const mode = params.get("mode") || "tasks";
       const voting = params.get("voting") === "true";
