@@ -247,6 +247,31 @@
           </div>
         </div>
 
+        <div class="preview-row">
+          <div class="preview-field">
+            <label for="title-display-mode">Title display</label>
+            <select id="title-display-mode">
+              <option value="text" selected>Title text</option>
+              <option value="digital-clock">Digital clock</option>
+            </select>
+          </div>
+          <div class="preview-field">
+            <label for="clock-format">Clock format</label>
+            <select id="clock-format">
+              <option value="24h" selected>24-hour</option>
+              <option value="12h">12-hour</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="preview-field">
+          <label for="clock-show-seconds">Clock seconds</label>
+          <select id="clock-show-seconds">
+            <option value="true" selected>Shown</option>
+            <option value="false">Hidden</option>
+          </select>
+        </div>
+
         <div class="preview-field">
           <label for="layout-mode">Layout mode</label>
           <select id="layout-mode">
@@ -414,6 +439,9 @@
           streamerName: "streamer",
           moderatorNames: "mod, moderator",
           titleText: wording.titleText,
+          titleDisplayMode: document.getElementById("title-display-mode").value,
+          clockFormat: document.getElementById("clock-format").value,
+          clockShowSeconds: document.getElementById("clock-show-seconds").value === "true",
           emptyText: wording.emptyText,
           layoutMode: document.getElementById("layout-mode").value,
           maxListHeight: document.getElementById("max-list-height").value,
@@ -477,6 +505,9 @@
         [
           "theme-preset",
           "mode-preset",
+          "title-display-mode",
+          "clock-format",
+          "clock-show-seconds",
           "layout-mode",
           "max-list-height",
           "hide-scrollbar",

@@ -80,6 +80,39 @@
           await new Promise((resolve) => setTimeout(resolve, 2200));
           if (list.scrollTop <= initialScrollTop) throw new Error("Task list auto-scroll did not move");
 
+          await window.TwitchTodoWidget.init({
+            layoutMode: "board",
+            maxTasks: 20,
+            maxListHeight: 180,
+            streamerName: "streamer",
+          });
+          if (list.scrollTop !== 0) throw new Error("Board layout kept the previous scroll position");
+          if (!document.querySelector(".todo-widget__item:not(.is-scroll-clone)")) {
+            throw new Error("Board layout reload did not render original task content");
+          }
+
+          await window.TwitchTodoWidget.init({
+            layoutMode: "ticker",
+            maxTasks: 20,
+            maxListHeight: 180,
+            streamerName: "streamer",
+          });
+          if (list.scrollTop !== 0) throw new Error("Ticker layout kept the previous scroll position");
+          if (list.querySelector(".todo-widget__item.is-scroll-clone")) {
+            throw new Error("Ticker layout kept auto-scroll clones");
+          }
+
+          await window.TwitchTodoWidget.init({
+            layoutMode: "compact",
+            maxTasks: 20,
+            maxListHeight: 180,
+            streamerName: "streamer",
+          });
+          if (list.scrollTop !== 0) throw new Error("Compact layout reload kept the previous scroll position");
+          if (!document.querySelector(".todo-widget__item:not(.is-scroll-clone)")) {
+            throw new Error("Layout reload did not render original task content");
+          }
+
           const positionChecks = [
             { position: "top-left", edge: "top", side: "left" },
             { position: "top-right", edge: "top", side: "right" },

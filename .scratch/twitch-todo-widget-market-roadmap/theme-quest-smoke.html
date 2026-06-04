@@ -84,6 +84,24 @@
               }
             }
           }
+
+          localStorage.clear();
+          await window.TwitchTodoWidget.init({
+            titleDisplayMode: "digital-clock",
+            clockFormat: "24h",
+            clockShowSeconds: true,
+          });
+          const clockTitle = document.getElementById("todo-title").textContent;
+          if (!/^\d{2}:\d{2}:\d{2}$/.test(clockTitle)) throw new Error(`Digital clock title failed: ${clockTitle}`);
+
+          await window.TwitchTodoWidget.init({
+            titleDisplayMode: "text",
+            titleText: "STREAM TASKS",
+          });
+          if (document.getElementById("todo-title").textContent !== "STREAM TASKS") {
+            throw new Error("Title text did not return after clock mode");
+          }
+
           result.textContent = "PASS";
         } catch (error) {
           result.textContent = `FAIL: ${error.message}`;

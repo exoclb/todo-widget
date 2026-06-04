@@ -5,6 +5,32 @@
     "value": "STREAM TASKS",
     "group": "Content"
   },
+  "titleDisplayMode": {
+    "type": "dropdown",
+    "label": "Title display",
+    "value": "text",
+    "options": {
+      "text": "Title text",
+      "digital-clock": "Digital clock"
+    },
+    "group": "Content"
+  },
+  "clockFormat": {
+    "type": "dropdown",
+    "label": "Clock format",
+    "value": "24h",
+    "options": {
+      "24h": "24-hour",
+      "12h": "12-hour"
+    },
+    "group": "Content"
+  },
+  "clockShowSeconds": {
+    "type": "checkbox",
+    "label": "Show clock seconds",
+    "value": true,
+    "group": "Content"
+  },
   "emptyText": {
     "type": "text",
     "label": "Empty state text",

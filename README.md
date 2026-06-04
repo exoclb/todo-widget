@@ -10,6 +10,7 @@ Built for live streams that need a lightweight task, quest, mission, or challeng
 
 - Chat-driven Task List with configurable add, complete, remove, reset, and vote commands.
 - Stable Task Numbers for `!done`, `!delete`, and `!vote`, even when visual sort changes.
+- Title display can use fixed text or a digital clock.
 - Task Owner and Task Manager permissions for predictable moderation.
 - Optional Voting Mode with cooldowns, duplicate vote handling, vote counts, and priority sort.
 - Theme Presets: Material light, Material dark, Catppuccin, Gruvbox, Nord, Tokyo Night, Dracula, Rose Pine, Kanagawa, One Dark, and Monokai.
@@ -117,7 +118,7 @@ Voting Mode is optional and disabled by default. When enabled, Viewers can vote 
 ## Display
 
 - Compact vertical list with configurable corner position.
-- Configurable title, empty state, Theme Preset, Quest Mode wording, Google Font, accent color, width, list height, opacity, custom panel image, and animations.
+- Configurable title text or digital clock, empty state, Theme Preset, Quest Mode wording, Google Font, accent color, width, list height, opacity, custom panel image, and animations.
 - Theme Presets include Material light, Material dark, Catppuccin, Gruvbox, Nord, Tokyo Night, Dracula, Rose Pine, Kanagawa, One Dark, and Monokai.
 - Quest Mode wording can present the same Task List as Tasks, Quests, Missions, or Challenges without changing Task Numbers or Chat Commands.
 - Layout Modes include compact sidebar for gameplay corners, horizontal ticker for top or bottom bars, and large board for chatting or intermission scenes.

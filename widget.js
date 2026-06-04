@@ -4,6 +4,9 @@
   const STORAGE_KEY = "twitchTodoWidgetState";
   const DEFAULT_CONFIG = {
     titleText: "STREAM TASKS",
+    titleDisplayMode: "text",
+    clockFormat: "24h",
+    clockShowSeconds: true,
     emptyText: "No tasks yet",
     addCommand: "!task",
     doneCommand: "!done",
@@ -65,6 +68,8 @@
   ]);
   const VALID_POSITIONS = new Set(["top-left", "top-right", "bottom-left", "bottom-right"]);
   const VALID_LAYOUT_MODES = new Set(["compact", "ticker", "board"]);
+  const VALID_TITLE_DISPLAY_MODES = new Set(["text", "digital-clock"]);
+  const VALID_CLOCK_FORMATS = new Set(["24h", "12h"]);
   const VALID_IMAGE_FITS = new Set(["cover", "contain"]);
   const VALID_VOTE_DUPLICATE_BEHAVIORS = new Set(["ignore", "change"]);
   const state = {
@@ -72,10 +77,12 @@
     storage: null,
     commandQueue: Promise.resolve(),
     cleanupTimer: null,
-    autoScrollTimer: null,
+    autoScrollFrame: null,
+    autoScrollFallbackTimer: null,
     autoScrollPauseUntil: 0,
     autoScrollOffset: 0,
     autoScrollLoopHeight: 0,
+    titleClockTimer: null,
     globalCooldownUntil: 0,
     userCooldowns: new Map(),
     voteCooldowns: new Map(),
@@ -149,6 +156,11 @@
       ...DEFAULT_CONFIG,
       ...source,
       titleText: String(source.titleText || DEFAULT_CONFIG.titleText).trim() || DEFAULT_CONFIG.titleText,
+      titleDisplayMode: VALID_TITLE_DISPLAY_MODES.has(source.titleDisplayMode)
+        ? source.titleDisplayMode
+        : DEFAULT_CONFIG.titleDisplayMode,
+      clockFormat: VALID_CLOCK_FORMATS.has(source.clockFormat) ? source.clockFormat : DEFAULT_CONFIG.clockFormat,
+      clockShowSeconds: source.clockShowSeconds !== false && source.clockShowSeconds !== "false",
       emptyText: String(source.emptyText || DEFAULT_CONFIG.emptyText).trim() || DEFAULT_CONFIG.emptyText,
       addCommand: normalizeCommand(source.addCommand, DEFAULT_CONFIG.addCommand),
       doneCommand: normalizeCommand(source.doneCommand, DEFAULT_CONFIG.doneCommand),
@@ -702,7 +714,7 @@
     const activeCount = getActiveTasks(stored.tasks).length;
     const counterLabel = activeCount === 1 ? state.config.taskLabelSingular : state.config.taskLabelPlural;
     widget.classList.toggle("has-tasks", orderedTasks.length > 0);
-    title.textContent = state.config.titleText;
+    renderTitle(title);
     counter.setAttribute("aria-label", `${activeCount} active ${counterLabel} out of ${state.config.maxTasks}`);
     counter.textContent = `${activeCount}/${state.config.maxTasks} ${counterLabel}`;
     empty.textContent = state.config.emptyText;
@@ -712,10 +724,45 @@
     syncAutoScroll(list);
   }
 
+  function stopTitleClock() {
+    if (state.titleClockTimer) {
+      clearInterval(state.titleClockTimer);
+      state.titleClockTimer = null;
+    }
+  }
+
+  function formatClock(date) {
+    return new Intl.DateTimeFormat(state.config.clockFormat === "12h" ? "en-US" : "en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: state.config.clockShowSeconds ? "2-digit" : undefined,
+      hour12: state.config.clockFormat === "12h",
+    }).format(date);
+  }
+
+  function renderTitle(title) {
+    stopTitleClock();
+    if (state.config.titleDisplayMode !== "digital-clock") {
+      title.textContent = state.config.titleText;
+      return;
+    }
+
+    function updateClock() {
+      title.textContent = formatClock(new Date());
+    }
+
+    updateClock();
+    state.titleClockTimer = setInterval(updateClock, state.config.clockShowSeconds ? 1000 : 15000);
+  }
+
   function stopAutoScroll() {
-    if (state.autoScrollTimer) {
-      clearInterval(state.autoScrollTimer);
-      state.autoScrollTimer = null;
+    if (state.autoScrollFrame) {
+      cancelAnimationFrame(state.autoScrollFrame);
+      state.autoScrollFrame = null;
+    }
+    if (state.autoScrollFallbackTimer) {
+      clearInterval(state.autoScrollFallbackTimer);
+      state.autoScrollFallbackTimer = null;
     }
     state.autoScrollOffset = 0;
     state.autoScrollLoopHeight = 0;
@@ -723,8 +770,8 @@
 
   function syncAutoScroll(list) {
     stopAutoScroll();
+    list.scrollTop = 0;
     if (state.config.layoutMode === "ticker" || list.scrollHeight <= list.clientHeight + 1) {
-      list.scrollTop = 0;
       return;
     }
 
@@ -741,12 +788,11 @@
       list.append(clone);
     });
 
-    state.autoScrollPauseUntil = Date.now() + 900;
-    const speed = 0.65 * state.config.animationSpeed;
-    let lastTick = Date.now();
+    state.autoScrollPauseUntil = performance.now() + 900;
+    const speedPixelsPerSecond = 36 * state.config.animationSpeed;
+    let lastTick = performance.now();
 
-    state.autoScrollTimer = setInterval(() => {
-      const now = Date.now();
+    function tick(now) {
       if (
         state.config.layoutMode === "ticker" ||
         list.scrollHeight <= list.clientHeight + 1 ||
@@ -756,16 +802,25 @@
         stopAutoScroll();
         return;
       }
+
       if (now >= state.autoScrollPauseUntil) {
-        const elapsedFrames = Math.min((now - lastTick) / 16.67, 3);
-        state.autoScrollOffset += speed * elapsedFrames;
+        const elapsedSeconds = Math.min(now - lastTick, 80) / 1000;
+        state.autoScrollOffset += speedPixelsPerSecond * elapsedSeconds;
         if (state.autoScrollOffset >= state.autoScrollLoopHeight) {
           state.autoScrollOffset -= state.autoScrollLoopHeight;
         }
         list.scrollTop = state.autoScrollOffset;
       }
+
       lastTick = now;
-    }, 16);
+      state.autoScrollFrame = requestAnimationFrame(tick);
+    }
+
+    state.autoScrollFrame = requestAnimationFrame(tick);
+    state.autoScrollFallbackTimer = setInterval(() => {
+      const now = performance.now();
+      if (now - lastTick > 120) tick(now);
+    }, 120);
   }
 
   function getOrderedTasks(tasks) {
