@@ -7,22 +7,24 @@
     <link rel="stylesheet" href="widget.css">
     <style>
       :root {
-        --preview-bg: #18202a;
-        --preview-panel: rgba(255, 255, 255, 0.08);
-        --preview-border: rgba(255, 255, 255, 0.14);
-        --preview-text: #f7fbff;
-        --preview-muted: #aab6c2;
+        --preview-bg: #f4f7fb;
+        --preview-panel: rgba(255, 255, 255, 0.86);
+        --preview-border: rgba(44, 56, 74, 0.16);
+        --preview-text: #1b2635;
+        --preview-muted: #647185;
       }
 
       body {
         min-height: 100vh;
         margin: 0;
         background:
-          radial-gradient(circle at 16% 18%, rgba(255, 196, 88, 0.24), transparent 30%),
-          radial-gradient(circle at 82% 28%, rgba(41, 244, 255, 0.2), transparent 32%),
-          linear-gradient(135deg, #18202a 0%, #253041 48%, #141922 100%);
+          linear-gradient(135deg, rgba(63, 125, 246, 0.12) 0 25%, transparent 25% 50%, rgba(255, 184, 77, 0.16) 50% 75%, transparent 75%),
+          linear-gradient(145deg, #f9fbff 0%, #e7edf6 52%, #f6f0e5 100%);
+        background-size:
+          46px 46px,
+          auto;
         color: var(--preview-text);
-        font-family: "Rajdhani", sans-serif;
+        font-family: "Lexend", sans-serif;
         overflow: auto;
       }
 
@@ -39,8 +41,8 @@
         border: 1px solid var(--preview-border);
         border-radius: 8px;
         background: var(--preview-panel);
-        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
-        backdrop-filter: blur(12px);
+        box-shadow: 0 18px 44px rgba(31, 43, 62, 0.14);
+        backdrop-filter: blur(10px);
       }
 
       .preview-controls {
@@ -83,7 +85,7 @@
         min-height: 38px;
         border: 1px solid var(--preview-border);
         border-radius: 6px;
-        background: rgba(5, 9, 15, 0.55);
+        background: rgba(255, 255, 255, 0.82);
         color: var(--preview-text);
         font: inherit;
         font-size: 16px;
@@ -110,9 +112,9 @@
 
       .preview-button {
         min-height: 38px;
-        border: 1px solid rgba(41, 244, 255, 0.35);
+        border: 1px solid rgba(63, 125, 246, 0.28);
         border-radius: 6px;
-        background: rgba(41, 244, 255, 0.12);
+        background: rgba(63, 125, 246, 0.1);
         color: var(--preview-text);
         cursor: pointer;
         font: inherit;
@@ -121,7 +123,7 @@
       }
 
       .preview-button:hover {
-        background: rgba(41, 244, 255, 0.18);
+        background: rgba(63, 125, 246, 0.16);
       }
 
       .preview-log {
@@ -132,7 +134,7 @@
         padding: 10px;
         border: 1px solid var(--preview-border);
         border-radius: 6px;
-        background: rgba(5, 9, 15, 0.42);
+        background: rgba(255, 255, 255, 0.7);
         color: var(--preview-muted);
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         font-size: 12px;
@@ -221,11 +223,17 @@
           <div class="preview-field">
             <label for="theme-preset">Theme preset</label>
             <select id="theme-preset">
-              <option value="minimal">Minimal clean</option>
-              <option value="cozy">Cozy pastel</option>
-              <option value="neon" selected>Clean neon HUD</option>
-              <option value="quest">RPG quest board</option>
-              <option value="vtuber">VTuber cute</option>
+              <option value="material-light" selected>Material light</option>
+              <option value="material-dark">Material dark</option>
+              <option value="catppuccin">Catppuccin</option>
+              <option value="gruvbox">Gruvbox</option>
+              <option value="nord">Nord</option>
+              <option value="tokyo-night">Tokyo Night</option>
+              <option value="dracula">Dracula</option>
+              <option value="rose-pine">Rose Pine</option>
+              <option value="kanagawa">Kanagawa</option>
+              <option value="one-dark">One Dark</option>
+              <option value="monokai">Monokai</option>
             </select>
           </div>
           <div class="preview-field">

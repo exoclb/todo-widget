@@ -27,14 +27,14 @@
     diagnosticButton: "Add diagnostic task",
     position: "top-right",
     layoutMode: "compact",
-    theme: "neon",
-    themePreset: "neon",
+    theme: "material-light",
+    themePreset: "material-light",
     taskLabelSingular: "Task",
     taskLabelPlural: "Tasks",
-    fontFamily: "Rajdhani",
-    accentColor: "#29f4ff",
+    fontFamily: "Lexend",
+    accentColor: "#3f7df6",
     maxWidth: 360,
-    backgroundOpacity: 0.78,
+    backgroundOpacity: 0.96,
     panelImage: "",
     panelImageOpacity: 0.35,
     panelImageFit: "cover",
@@ -48,7 +48,19 @@
     streamerName: "",
   };
 
-  const VALID_THEMES = new Set(["minimal", "cozy", "neon", "quest", "vtuber", "mono", "pixel"]);
+  const VALID_THEMES = new Set([
+    "material-light",
+    "material-dark",
+    "catppuccin",
+    "gruvbox",
+    "nord",
+    "tokyo-night",
+    "dracula",
+    "rose-pine",
+    "kanagawa",
+    "one-dark",
+    "monokai",
+  ]);
   const VALID_POSITIONS = new Set(["top-left", "top-right", "bottom-left", "bottom-right"]);
   const VALID_LAYOUT_MODES = new Set(["compact", "ticker", "board"]);
   const VALID_IMAGE_FITS = new Set(["cover", "contain"]);

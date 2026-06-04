@@ -12,7 +12,7 @@ Built for live streams that need a lightweight task, quest, mission, or challeng
 - Stable Task Numbers for `!done`, `!delete`, and `!vote`, even when visual sort changes.
 - Task Owner and Task Manager permissions for predictable moderation.
 - Optional Voting Mode with cooldowns, duplicate vote handling, vote counts, and priority sort.
-- Theme Presets: minimal clean, cozy pastel, clean neon HUD, RPG quest board, and VTuber cute.
+- Theme Presets: Material light, Material dark, Catppuccin, Gruvbox, Nord, Tokyo Night, Dracula, Rose Pine, Kanagawa, One Dark, and Monokai.
 - Layout Modes: compact sidebar, horizontal ticker, and large board.
 - Quest/Mission/Challenge wording controls without changing the underlying Task model.
 - Custom panel, frame, and task icon images with opacity and fit controls.
@@ -117,7 +117,7 @@ Voting Mode is optional and disabled by default. When enabled, Viewers can vote 
 
 - Compact vertical list with configurable corner position.
 - Configurable title, empty state, Theme Preset, Quest Mode wording, Google Font, accent color, width, opacity, custom panel image, and animations.
-- Theme Presets include minimal clean, cozy pastel, clean neon HUD, RPG quest board, and VTuber cute.
+- Theme Presets include Material light, Material dark, Catppuccin, Gruvbox, Nord, Tokyo Night, Dracula, Rose Pine, Kanagawa, One Dark, and Monokai.
 - Quest Mode wording can present the same Task List as Tasks, Quests, Missions, or Challenges without changing Task Numbers or Chat Commands.
 - Layout Modes include compact sidebar for gameplay corners, horizontal ticker for top or bottom bars, and large board for chatting or intermission scenes.
 - Voting Mode can show vote counts beside Task Owners and optionally sort Active Tasks by vote count.
@@ -140,18 +140,28 @@ Animations are visual only. Successful commands and Ignored Commands still use S
 
 ### Clean Gameplay Sidebar
 
-- Theme Preset: `Clean neon HUD` or `Minimal clean`
+- Theme Preset: `Material light`
 - Layout Mode: `Compact sidebar`
 - Position: `Top right`
 - Voting Mode: `Disabled`
-- Background opacity: `0.70` to `0.85`
+- Background opacity: `0.90` to `1.00`
 - Animations: `Enabled`, speed near `1`
 
 Use this for gameplay scenes where the Task Overlay should stay readable without taking over the screen.
 
-### Chatting Quest Board
+### Dark Gameplay Sidebar
 
-- Theme Preset: `RPG quest board`
+- Theme Preset: `Material dark`, `Tokyo Night`, or `One Dark`
+- Font: `Lexend`
+- Accent color: keep the preset default, or use a bright brand color with similar contrast
+- Background opacity: `0.94` to `1.00`
+- Panel image opacity: `0.00` to `0.18` if a branded texture is used
+
+Use this when the overlay sits on bright gameplay and needs strong contrast without becoming neon or glassy.
+
+### Editor Palette Overlay
+
+- Theme Preset: `Catppuccin`, `Gruvbox`, `Nord`, `Dracula`, `Rose Pine`, `Kanagawa`, or `Monokai`
 - Layout Mode: `Large board`
 - Wording: Quests or Missions
 - Voting Mode: `Enabled`
@@ -159,17 +169,6 @@ Use this for gameplay scenes where the Task Overlay should stay readable without
 - Vote priority sort: `On`
 
 Use this for intermission, chatting, challenge streams, or community-driven segments where viewer priority matters.
-
-### Branded VTuber Overlay
-
-- Theme Preset: `VTuber cute`
-- Layout Mode: `Compact sidebar` or `Horizontal ticker`
-- Panel image: low-contrast brand texture
-- Frame image: transparent overlay-pack frame
-- Task icon image: small mascot mark, badge, or channel symbol
-- Panel image opacity: `0.15` to `0.35`
-
-Use this when the widget needs to match a stream package or character-led visual identity.
 
 ## StreamElements Setup
 

@@ -188,13 +188,19 @@
   "themePreset": {
     "type": "dropdown",
     "label": "Theme preset",
-    "value": "neon",
+    "value": "material-light",
     "options": {
-      "minimal": "Minimal clean",
-      "cozy": "Cozy pastel",
-      "neon": "Clean neon HUD",
-      "quest": "RPG quest board",
-      "vtuber": "VTuber cute"
+      "material-light": "Material light",
+      "material-dark": "Material dark",
+      "catppuccin": "Catppuccin",
+      "gruvbox": "Gruvbox",
+      "nord": "Nord",
+      "tokyo-night": "Tokyo Night",
+      "dracula": "Dracula",
+      "rose-pine": "Rose Pine",
+      "kanagawa": "Kanagawa",
+      "one-dark": "One Dark",
+      "monokai": "Monokai"
     },
     "group": "Appearance"
   },
@@ -213,13 +219,13 @@
   "fontFamily": {
     "type": "googleFont",
     "label": "Font",
-    "value": "Rajdhani",
+    "value": "Lexend",
     "group": "Appearance"
   },
   "accentColor": {
     "type": "colorpicker",
     "label": "Accent color",
-    "value": "#29f4ff",
+    "value": "#3f7df6",
     "group": "Appearance"
   },
   "maxWidth": {
@@ -234,7 +240,7 @@
   "backgroundOpacity": {
     "type": "slider",
     "label": "Background opacity",
-    "value": 0.78,
+    "value": 0.96,
     "min": 0,
     "max": 1,
     "step": 0.01,
