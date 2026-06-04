@@ -4,7 +4,7 @@ A StreamElements custom widget for Twitch streamers. Viewers can add tasks from 
 
 Built for live streams that need a lightweight task, quest, mission, or challenge overlay driven by Twitch chat. The widget is copy-paste friendly for StreamElements and includes local preview plus smoke tests for safer setup.
 
-![Twitch Todo Widget visual presets and layout modes](docs/assets/marketplace-gallery.png)
+![Twitch Todo Widget visual presets and layout modes](docs/assets/theme-gallery-2026.png)
 
 ## Implemented Features
 
