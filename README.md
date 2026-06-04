@@ -181,6 +181,15 @@ Use this when the widget needs to match a stream package or character-led visual
 6. Test with local preview first, then test inside StreamElements while `debugMode` is enabled.
 7. Turn `debugMode` off for production.
 
+## StreamElements Troubleshooting
+
+- Copy all required tabs after updates: `widget.html`, `widget.css`, `widget.js`, and `widget.json`. Position fixes live in CSS, command fixes live in JS, and debug controls live in Fields.
+- Enable **Show debug overlay** while testing live chat commands. The overlay reports whether the widget is loaded, which event arrived, and whether a command was queued, accepted, ignored, unknown, or failed.
+- Use **Diagnostic button** in the Moderation field group to confirm the widget can add a task without relying on live chat.
+- If the debug overlay shows a sandboxed `localStorage` error in StreamElements preview, the widget falls back to memory storage so commands can still display. In live overlay or OBS, `SE_API.store` should provide persistent state.
+- If `!task` is ignored with a cooldown or capacity reason, reduce `globalCooldownSeconds`, `userCooldownSeconds`, `perUserTaskLimit`, or `maxTasks` while testing.
+- If bottom positions still look wrong after changing Appearance fields, refresh the overlay or browser source and confirm the latest `widget.css` was copied.
+
 ## Debug Mode
 
 Enable `debugMode` only while testing. It logs Ignored Commands, configuration, and command parsing details in the browser console or local preview log. Keep it disabled during normal streams to avoid noisy console output.

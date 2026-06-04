@@ -33,6 +33,11 @@ body {
 }
 
 .todo-widget {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  bottom: auto;
+  left: auto;
   width: 100%;
   min-width: 260px;
   max-width: var(--todo-max-width);
@@ -40,19 +45,32 @@ body {
   letter-spacing: 0;
 }
 
-.todo-widget[data-position="top-right"],
-.todo-widget[data-position="bottom-right"] {
-  margin-left: auto;
+.todo-widget[data-position="top-left"] {
+  top: 24px;
+  right: auto;
+  bottom: auto;
+  left: 24px;
 }
 
-.todo-widget[data-position="top-left"],
+.todo-widget[data-position="top-right"] {
+  top: 24px;
+  right: 24px;
+  bottom: auto;
+  left: auto;
+}
+
 .todo-widget[data-position="bottom-left"] {
-  margin-right: auto;
+  top: auto;
+  right: auto;
+  bottom: 24px;
+  left: 24px;
 }
 
-.todo-widget[data-position="bottom-left"],
 .todo-widget[data-position="bottom-right"] {
-  padding-top: 0;
+  top: auto;
+  right: 24px;
+  bottom: 24px;
+  left: auto;
 }
 
 .todo-widget[data-layout="ticker"],

@@ -58,6 +58,7 @@ run_page ".scratch/twitch-todo-widget-market-roadmap/animation-smoke.html" "task
 run_page ".scratch/twitch-todo-widget-market-roadmap/layout-smoke.html" "layout modes"
 run_page ".scratch/twitch-todo-widget-market-roadmap/custom-image-smoke.html" "custom images"
 run_page ".scratch/twitch-todo-widget-market-roadmap/voting-smoke.html" "voting mode"
+run_page ".scratch/twitch-todo-widget-market-roadmap/chat-event-smoke.html" "chat event payloads"
 run_page ".scratch/twitch-todo-widget-market-roadmap/preview-smoke.html" "local preview controls and commands"
 
 printf "ok - smoke test suite\n"

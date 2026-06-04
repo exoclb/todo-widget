@@ -150,6 +150,18 @@
     "value": false,
     "group": "Moderation"
   },
+  "debugOverlay": {
+    "type": "checkbox",
+    "label": "Show debug overlay",
+    "value": false,
+    "group": "Moderation"
+  },
+  "diagnosticButton": {
+    "type": "button",
+    "label": "Diagnostic button",
+    "value": "Add diagnostic task",
+    "group": "Moderation"
+  },
   "position": {
     "type": "dropdown",
     "label": "Position",

@@ -56,6 +56,30 @@
             if (getComputedStyle(widget).maxWidth === "none") throw new Error(`Max width missing in ${layoutMode}`);
           }
 
+          const positionChecks = [
+            { position: "top-left", edge: "top", side: "left" },
+            { position: "top-right", edge: "top", side: "right" },
+            { position: "bottom-left", edge: "bottom", side: "left" },
+            { position: "bottom-right", edge: "bottom", side: "right" },
+          ];
+
+          for (const check of positionChecks) {
+            await window.TwitchTodoWidget.init({
+              layoutMode: "compact",
+              position: check.position,
+              streamerName: "streamer",
+            });
+            const rect = document.getElementById("todo-widget").getBoundingClientRect();
+            if (check.edge === "top" && rect.top > 40) throw new Error(`${check.position} is not anchored to top`);
+            if (check.edge === "bottom" && window.innerHeight - rect.bottom > 40) {
+              throw new Error(`${check.position} is not anchored to bottom`);
+            }
+            if (check.side === "left" && rect.left > 40) throw new Error(`${check.position} is not anchored to left`);
+            if (check.side === "right" && window.innerWidth - rect.right > 40) {
+              throw new Error(`${check.position} is not anchored to right`);
+            }
+          }
+
           result.textContent = "PASS";
         } catch (error) {
           result.textContent = `FAIL: ${error.message}`;

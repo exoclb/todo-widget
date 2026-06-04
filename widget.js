@@ -23,6 +23,8 @@
     moderatorNames: "",
     blacklistWords: "",
     debugMode: false,
+    debugOverlay: false,
+    diagnosticButton: "Add diagnostic task",
     position: "top-right",
     layoutMode: "compact",
     theme: "neon",
@@ -62,6 +64,11 @@
     renderedTaskStatuses: new Map(),
     hasRenderedTasks: false,
     previewLog: null,
+    diagnostics: {
+      status: "loading",
+      lastEvent: "none",
+      lastCommand: "none",
+    },
   };
 
   function clampNumber(value, fallback, min, max) {
@@ -158,6 +165,8 @@
       enableAnimations: source.enableAnimations !== false && source.enableAnimations !== "false",
       animationSpeed: clampNumber(source.animationSpeed, DEFAULT_CONFIG.animationSpeed, 0.5, 2),
       debugMode: source.debugMode === true || source.debugMode === "true",
+      debugOverlay: source.debugOverlay === true || source.debugOverlay === "true",
+      diagnosticButton: String(source.diagnosticButton || DEFAULT_CONFIG.diagnosticButton),
       moderatorNames: String(source.moderatorNames || ""),
       blacklistWords: String(source.blacklistWords || ""),
       streamerName: String(source.streamerName || ""),
@@ -177,30 +186,85 @@
     }
   }
 
+  function updateDiagnosticOverlay(nextDiagnostics) {
+    state.diagnostics = { ...state.diagnostics, ...nextDiagnostics };
+    const existing = document.getElementById("todo-debug-overlay");
+    if (!state.config.debugOverlay) {
+      if (existing) existing.remove();
+      return;
+    }
+
+    const widget = document.getElementById("todo-widget");
+    if (!widget) return;
+    const overlay = existing || document.createElement("div");
+    overlay.id = "todo-debug-overlay";
+    overlay.style.cssText = [
+      "position:absolute",
+      "left:8px",
+      "bottom:8px",
+      "z-index:9999",
+      "max-width:320px",
+      "padding:8px 10px",
+      "border:1px solid rgba(41,244,255,.65)",
+      "border-radius:6px",
+      "background:rgba(0,0,0,.78)",
+      "color:#f7fbff",
+      "font:12px/1.35 monospace",
+      "pointer-events:none",
+      "white-space:pre-wrap",
+    ].join(";");
+    overlay.textContent = [
+      "Todo debug",
+      `status: ${state.diagnostics.status}`,
+      `event: ${state.diagnostics.lastEvent}`,
+      `command: ${state.diagnostics.lastCommand}`,
+    ].join("\n");
+    if (!existing) widget.append(overlay);
+  }
+
   function createStorageAdapter() {
-    if (window.SE_API && window.SE_API.store) {
+    const streamElementsApi =
+      window.SE_API || (typeof SE_API !== "undefined" && SE_API && typeof SE_API === "object" ? SE_API : null);
+    if (streamElementsApi && streamElementsApi.store) {
       return {
         async get() {
-          const stored = await window.SE_API.store.get(STORAGE_KEY);
+          const stored = await streamElementsApi.store.get(STORAGE_KEY);
           return normalizeStoredState(stored);
         },
         async set(nextState) {
-          await window.SE_API.store.set(STORAGE_KEY, nextState);
+          await streamElementsApi.store.set(STORAGE_KEY, nextState);
         },
       };
     }
 
+    let memoryState = normalizeStoredState(null);
+    let localStorageRef = null;
+    try {
+      localStorageRef = window.localStorage;
+    } catch (error) {
+      debugLog("localStorage unavailable", { message: error.message });
+    }
+
     return {
       async get() {
+        if (!localStorageRef) return memoryState;
         try {
-          return normalizeStoredState(JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"));
+          memoryState = normalizeStoredState(JSON.parse(localStorageRef.getItem(STORAGE_KEY) || "null"));
+          return memoryState;
         } catch (error) {
           debugLog("localStorage parse failed", { message: error.message });
-          return normalizeStoredState(null);
+          return memoryState;
         }
       },
       async set(nextState) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+        memoryState = normalizeStoredState(nextState);
+        if (!localStorageRef) return;
+        try {
+          localStorageRef.setItem(STORAGE_KEY, JSON.stringify(nextState));
+        } catch (error) {
+          localStorageRef = null;
+          debugLog("localStorage write failed", { message: error.message });
+        }
       },
     };
   }
@@ -289,8 +353,10 @@
     const detail = event && event.detail ? event.detail : event || {};
     const envelope = detail.event || detail.data || detail;
     const data = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
-    const listener = detail.listener || envelope.listener || data.listener || "";
-    const renderedText = data.renderedText || data.text || data.message || "";
+    const messagePayload = data.message && typeof data.message === "object" ? data.message : {};
+    const tags = data.tags && typeof data.tags === "object" ? data.tags : {};
+    const listener = detail.listener || envelope.listener || data.listener || data.type || envelope.type || "";
+    const renderedText = data.renderedText || data.text || messagePayload.text || data.message || "";
     const user = data.user || data.sender || data.author || {};
     const displayName =
       user.displayName ||
@@ -298,12 +364,18 @@
       user.name ||
       user.username ||
       data.displayName ||
+      data.displayname ||
+      data.nick ||
+      data.chatter_user_name ||
+      tags["display-name"] ||
       data.name ||
       data.username ||
       "viewer";
-    const username = user.username || user.name || data.username || data.name || displayName;
-    const authorId = user.id || user.userId || data.userId || data.authorId || "";
-    const badges = user.badges || data.badges || [];
+    const username =
+      user.username || user.name || data.username || data.nick || data.chatter_user_login || data.name || displayName;
+    const authorId =
+      user.id || user.userId || data.userId || data.authorId || data.chatter_user_id || tags["user-id"] || "";
+    const badges = user.badges || data.badges || tags.badges || [];
     const roles = user.roles || data.roles || [];
 
     return {
@@ -322,17 +394,29 @@
     return user.authorId || normalizeName(user.username || user.displayName);
   }
 
+  function normalizeBadgeOrRoleValues(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return Object.keys(value || {});
+  }
+
   function hasBadgeOrRole(user, names) {
     const expected = new Set(names);
     const values = [];
-    const badges = Array.isArray(user.badges) ? user.badges : Object.keys(user.badges || {});
+    const badges = normalizeBadgeOrRoleValues(user.badges);
     badges.forEach((badge) => {
       if (typeof badge === "string") values.push(badge);
+      if (typeof badge === "string" && badge.includes("/")) values.push(badge.split("/")[0]);
       if (badge && typeof badge === "object") {
-        values.push(badge.type, badge.name, badge.title, badge.version);
+        values.push(badge.type, badge.name, badge.title, badge.version, badge.set_id);
       }
     });
-    const roles = Array.isArray(user.roles) ? user.roles : Object.keys(user.roles || {});
+    const roles = normalizeBadgeOrRoleValues(user.roles);
     roles.forEach((role) => {
       if (typeof role === "string") values.push(role);
       if (role && typeof role === "object") values.push(role.type, role.name);
@@ -367,15 +451,20 @@
   }
 
   function enqueueCommand(chatEvent) {
+    updateDiagnosticOverlay({ lastCommand: `queued ${String(chatEvent.message || "").slice(0, 80)}` });
     state.commandQueue = state.commandQueue
       .then(() => handleCommand(chatEvent))
-      .catch((error) => debugLog("command queue failed", { message: error.message }));
+      .catch((error) => {
+        updateDiagnosticOverlay({ lastCommand: `failed: ${error.message}` });
+        debugLog("command queue failed", { message: error.message });
+      });
     return state.commandQueue;
   }
 
   async function handleCommand(chatEvent) {
     const parsed = parseCommand(chatEvent.message);
     if (!parsed) return;
+    updateDiagnosticOverlay({ lastCommand: `processing ${parsed.command}` });
 
     const commands = state.config;
     let handler = null;
@@ -384,7 +473,10 @@
     if (parsed.command === commands.deleteCommand) handler = removeTask;
     if (parsed.command === commands.resetCommand) handler = resetTasks;
     if (parsed.command === commands.voteCommand && !handler) handler = voteTask;
-    if (!handler) return;
+    if (!handler) {
+      updateDiagnosticOverlay({ lastCommand: `unknown ${parsed.command}` });
+      return;
+    }
 
     const stored = cleanupExpiredTasks(await state.storage.get(), Date.now());
     const result = await handler(stored, parsed.args, chatEvent);
@@ -392,8 +484,12 @@
       await state.storage.set(result.nextState);
       render(result.nextState);
       scheduleCleanup(result.nextState);
+      updateDiagnosticOverlay({ lastCommand: `accepted ${parsed.command}` });
     }
-    if (result && result.reason) debugLog("command ignored", { command: parsed.command, reason: result.reason });
+    if (result && result.reason) {
+      updateDiagnosticOverlay({ lastCommand: `ignored ${parsed.command}: ${result.reason}` });
+      debugLog("command ignored", { command: parsed.command, reason: result.reason });
+    }
   }
 
   async function addTask(stored, taskText, user) {
@@ -659,6 +755,7 @@
     await state.storage.set(stored);
     render(stored);
     scheduleCleanup(stored);
+    updateDiagnosticOverlay({ status: "loaded", lastCommand: `add=${state.config.addCommand}` });
     debugLog("widget initialized", { config: state.config });
   }
 
@@ -685,9 +782,39 @@
 
   window.addEventListener("onEventReceived", (event) => {
     const chatEvent = extractChatEvent(event);
-    if (chatEvent.listener && chatEvent.listener !== "message") return;
-    if (!chatEvent.message) return;
+    const listener = normalizeName(chatEvent.listener);
+    const widgetEvent = event.detail && event.detail.event && typeof event.detail.event === "object" ? event.detail.event : {};
+    const widgetButtonField = event.detail && (event.detail.field || widgetEvent.field);
+    if (listener === "widget-button" && widgetButtonField === "diagnosticButton") {
+      updateDiagnosticOverlay({ lastEvent: "widget-button", lastCommand: "diagnostic task queued" });
+      enqueueCommand({
+        message: `${state.config.addCommand} Diagnostic task from StreamElements button`,
+        displayName: state.config.streamerName || "StreamElements",
+        username: state.config.streamerName || "streamelements",
+        authorId: "streamelements-diagnostic",
+        badges: [{ type: "broadcaster" }],
+        roles: ["streamer"],
+        raw: event.detail,
+      });
+      return;
+    }
+    if (listener === "kvstore:update") return;
+
+    const isChatListener =
+      !listener || listener === "message" || listener === "chatmessage" || listener === "channel.chat.message";
+    if (!isChatListener) {
+      updateDiagnosticOverlay({ lastEvent: `ignored listener=${listener || "unknown"}` });
+      return;
+    }
+    if (!chatEvent.message) {
+      updateDiagnosticOverlay({ lastEvent: `empty message listener=${listener || "unknown"}` });
+      return;
+    }
     debugLog("chat event", { message: chatEvent.message, user: chatEvent.displayName });
+    updateDiagnosticOverlay({
+      lastEvent: `chat listener=${listener || "none"}`,
+      lastCommand: `${chatEvent.displayName}: ${chatEvent.message}`,
+    });
     enqueueCommand(chatEvent);
   });
 
