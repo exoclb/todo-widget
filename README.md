@@ -14,6 +14,7 @@ Built for live streams that need a lightweight task, quest, mission, or challeng
 - Optional Voting Mode with cooldowns, duplicate vote handling, vote counts, and priority sort.
 - Theme Presets: Material light, Material dark, Catppuccin, Gruvbox, Nord, Tokyo Night, Dracula, Rose Pine, Kanagawa, One Dark, and Monokai.
 - Layout Modes: compact sidebar, horizontal ticker, and large board.
+- Auto-scrolling task list with configurable max height and optional hidden scrollbar, so full lists do not stretch the overlay.
 - Quest/Mission/Challenge wording controls without changing the underlying Task model.
 - Custom panel, frame, and task icon images with opacity and fit controls.
 - Animation controls for new and completed tasks, with reduced-motion support.
@@ -116,10 +117,11 @@ Voting Mode is optional and disabled by default. When enabled, Viewers can vote 
 ## Display
 
 - Compact vertical list with configurable corner position.
-- Configurable title, empty state, Theme Preset, Quest Mode wording, Google Font, accent color, width, opacity, custom panel image, and animations.
+- Configurable title, empty state, Theme Preset, Quest Mode wording, Google Font, accent color, width, list height, opacity, custom panel image, and animations.
 - Theme Presets include Material light, Material dark, Catppuccin, Gruvbox, Nord, Tokyo Night, Dracula, Rose Pine, Kanagawa, One Dark, and Monokai.
 - Quest Mode wording can present the same Task List as Tasks, Quests, Missions, or Challenges without changing Task Numbers or Chat Commands.
 - Layout Modes include compact sidebar for gameplay corners, horizontal ticker for top or bottom bars, and large board for chatting or intermission scenes.
+- Full compact and board lists stay inside the configured max list height, can hide the scrollbar, and auto-scroll when content overflows.
 - Voting Mode can show vote counts beside Task Owners and optionally sort Active Tasks by vote count.
 - Optional panel background image, frame overlay image, and task icon image support StreamElements uploads.
 - Panel and frame images include opacity controls and cover/contain fit modes. Task icons include an opacity control and render at a stable task-row size.

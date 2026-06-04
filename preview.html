@@ -256,6 +256,19 @@
           </select>
         </div>
 
+        <div class="preview-field">
+          <label for="max-list-height">Max list height</label>
+          <input id="max-list-height" type="range" min="180" max="720" step="10" value="360">
+        </div>
+
+        <div class="preview-field">
+          <label for="hide-scrollbar">Scrollbar</label>
+          <select id="hide-scrollbar">
+            <option value="true" selected>Hidden</option>
+            <option value="false">Visible</option>
+          </select>
+        </div>
+
         <div class="preview-row">
           <div class="preview-field">
             <label for="enable-voting">Voting mode</label>
@@ -403,6 +416,8 @@
           titleText: wording.titleText,
           emptyText: wording.emptyText,
           layoutMode: document.getElementById("layout-mode").value,
+          maxListHeight: document.getElementById("max-list-height").value,
+          hideScrollbar: document.getElementById("hide-scrollbar").value === "true",
           themePreset: document.getElementById("theme-preset").value,
           taskLabelSingular: wording.singular,
           taskLabelPlural: wording.plural,
@@ -463,6 +478,8 @@
           "theme-preset",
           "mode-preset",
           "layout-mode",
+          "max-list-height",
+          "hide-scrollbar",
           "enable-voting",
           "vote-priority-sort",
           "vote-duplicate-behavior",

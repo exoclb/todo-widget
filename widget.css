@@ -1,6 +1,7 @@
 :root {
   --todo-font: "Lexend", sans-serif;
   --todo-max-width: 360px;
+  --todo-max-list-height: 360px;
   --todo-accent: #3f7df6;
   --todo-bg-opacity: 0.96;
   --todo-bg-rgb: 244, 247, 251;
@@ -173,9 +174,38 @@ body {
 .todo-widget__list {
   display: grid;
   gap: 8px;
+  max-height: min(var(--todo-max-list-height), calc(100vh - 112px));
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   list-style: none;
+  overscroll-behavior: contain;
+  scroll-behavior: auto;
+  scrollbar-color: var(--todo-accent) transparent;
+  scrollbar-width: thin;
+}
+
+.todo-widget[data-hide-scrollbar="true"] .todo-widget__list {
+  scrollbar-width: none;
+}
+
+.todo-widget[data-hide-scrollbar="true"] .todo-widget__list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.todo-widget__list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.todo-widget__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.todo-widget__list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--todo-accent);
 }
 
 .todo-widget__item {
@@ -193,6 +223,10 @@ body {
 
 .todo-widget[data-task-icon="true"] .todo-widget__item {
   grid-template-columns: 44px 24px minmax(0, 1fr);
+}
+
+.todo-widget__item.is-scroll-clone {
+  pointer-events: none;
 }
 
 .todo-widget__item::before {
@@ -328,6 +362,7 @@ body {
   grid-auto-columns: minmax(220px, 280px);
   grid-auto-flow: column;
   grid-template-columns: none;
+  max-height: none;
   overflow: hidden;
 }
 
@@ -369,6 +404,7 @@ body {
 .todo-widget[data-layout="board"] .todo-widget__list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  max-height: min(var(--todo-max-list-height), calc(100vh - 128px));
 }
 
 .todo-widget[data-layout="board"] .todo-widget__item {

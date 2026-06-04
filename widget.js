@@ -34,6 +34,8 @@
     fontFamily: "Lexend",
     accentColor: "#3f7df6",
     maxWidth: 360,
+    maxListHeight: 360,
+    hideScrollbar: true,
     backgroundOpacity: 0.96,
     panelImage: "",
     panelImageOpacity: 0.35,
@@ -70,6 +72,10 @@
     storage: null,
     commandQueue: Promise.resolve(),
     cleanupTimer: null,
+    autoScrollTimer: null,
+    autoScrollPauseUntil: 0,
+    autoScrollOffset: 0,
+    autoScrollLoopHeight: 0,
     globalCooldownUntil: 0,
     userCooldowns: new Map(),
     voteCooldowns: new Map(),
@@ -131,6 +137,11 @@
     return clampNumber(source.maxWidth, fallback, 260, 900);
   }
 
+  function resolveMaxListHeight(source, layoutMode) {
+    const fallback = layoutMode === "board" ? 520 : DEFAULT_CONFIG.maxListHeight;
+    return clampNumber(source.maxListHeight, fallback, 180, 720);
+  }
+
   function buildConfig(fieldData) {
     const source = fieldData || {};
     const layoutMode = VALID_LAYOUT_MODES.has(source.layoutMode) ? source.layoutMode : DEFAULT_CONFIG.layoutMode;
@@ -165,6 +176,8 @@
       fontFamily: String(source.fontFamily || DEFAULT_CONFIG.fontFamily).trim() || DEFAULT_CONFIG.fontFamily,
       accentColor: String(source.accentColor || DEFAULT_CONFIG.accentColor).trim() || DEFAULT_CONFIG.accentColor,
       maxWidth: resolveMaxWidth(source, layoutMode),
+      maxListHeight: resolveMaxListHeight(source, layoutMode),
+      hideScrollbar: source.hideScrollbar !== false && source.hideScrollbar !== "false",
       backgroundOpacity: clampNumber(source.backgroundOpacity, DEFAULT_CONFIG.backgroundOpacity, 0, 1),
       panelImage: normalizeImageUrl(source.panelImage),
       panelImageOpacity: clampNumber(source.panelImageOpacity, DEFAULT_CONFIG.panelImageOpacity, 0, 1),
@@ -649,10 +662,12 @@
     widget.dataset.theme = state.config.themePreset;
     widget.dataset.animations = String(state.config.enableAnimations);
     widget.dataset.taskIcon = String(Boolean(state.config.taskIconImage));
+    widget.dataset.hideScrollbar = String(state.config.hideScrollbar);
     document.documentElement.style.setProperty("--todo-animation-speed", state.config.animationSpeed);
     document.documentElement.style.setProperty("--todo-font", `"${state.config.fontFamily}", sans-serif`);
     document.documentElement.style.setProperty("--todo-accent", state.config.accentColor);
     document.documentElement.style.setProperty("--todo-max-width", `${state.config.maxWidth}px`);
+    document.documentElement.style.setProperty("--todo-max-list-height", `${state.config.maxListHeight}px`);
     document.documentElement.style.setProperty("--todo-bg-opacity", state.config.backgroundOpacity);
     document.documentElement.style.setProperty("--todo-panel-image", cssUrl(state.config.panelImage));
     document.documentElement.style.setProperty(
@@ -694,6 +709,63 @@
     list.replaceChildren(...orderedTasks.map((task) => createTaskElement(task, previousStatuses)));
     state.renderedTaskStatuses = new Map(orderedTasks.map((task) => [task.id, task.status]));
     state.hasRenderedTasks = true;
+    syncAutoScroll(list);
+  }
+
+  function stopAutoScroll() {
+    if (state.autoScrollTimer) {
+      clearInterval(state.autoScrollTimer);
+      state.autoScrollTimer = null;
+    }
+    state.autoScrollOffset = 0;
+    state.autoScrollLoopHeight = 0;
+  }
+
+  function syncAutoScroll(list) {
+    stopAutoScroll();
+    if (state.config.layoutMode === "ticker" || list.scrollHeight <= list.clientHeight + 1) {
+      list.scrollTop = 0;
+      return;
+    }
+
+    const originalItems = Array.from(list.children);
+    const lastOriginalItem = originalItems[originalItems.length - 1];
+    if (!lastOriginalItem) return;
+    if (originalItems.length < 4) return;
+
+    state.autoScrollLoopHeight = lastOriginalItem.offsetTop + lastOriginalItem.offsetHeight;
+    originalItems.forEach((item) => {
+      const clone = item.cloneNode(true);
+      clone.classList.add("is-scroll-clone");
+      clone.setAttribute("aria-hidden", "true");
+      list.append(clone);
+    });
+
+    state.autoScrollPauseUntil = Date.now() + 900;
+    const speed = 0.65 * state.config.animationSpeed;
+    let lastTick = Date.now();
+
+    state.autoScrollTimer = setInterval(() => {
+      const now = Date.now();
+      if (
+        state.config.layoutMode === "ticker" ||
+        list.scrollHeight <= list.clientHeight + 1 ||
+        state.autoScrollLoopHeight <= 0
+      ) {
+        list.scrollTop = 0;
+        stopAutoScroll();
+        return;
+      }
+      if (now >= state.autoScrollPauseUntil) {
+        const elapsedFrames = Math.min((now - lastTick) / 16.67, 3);
+        state.autoScrollOffset += speed * elapsedFrames;
+        if (state.autoScrollOffset >= state.autoScrollLoopHeight) {
+          state.autoScrollOffset -= state.autoScrollLoopHeight;
+        }
+        list.scrollTop = state.autoScrollOffset;
+      }
+      lastTick = now;
+    }, 16);
   }
 
   function getOrderedTasks(tasks) {

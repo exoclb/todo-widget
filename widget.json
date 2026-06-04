@@ -237,6 +237,21 @@
     "step": 10,
     "group": "Appearance"
   },
+  "maxListHeight": {
+    "type": "number",
+    "label": "Max list height px",
+    "value": 360,
+    "min": 180,
+    "max": 720,
+    "step": 10,
+    "group": "Appearance"
+  },
+  "hideScrollbar": {
+    "type": "checkbox",
+    "label": "Hide task scrollbar",
+    "value": true,
+    "group": "Appearance"
+  },
   "backgroundOpacity": {
     "type": "slider",
     "label": "Background opacity",

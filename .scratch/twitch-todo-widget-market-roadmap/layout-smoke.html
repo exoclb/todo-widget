@@ -44,7 +44,7 @@
           await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Review scene audio" });
 
           for (const layoutMode of ["compact", "ticker", "board"]) {
-            await window.TwitchTodoWidget.init({ layoutMode, streamerName: "streamer" });
+            await window.TwitchTodoWidget.init({ layoutMode, maxListHeight: 220, streamerName: "streamer" });
             const widget = document.getElementById("todo-widget");
             const items = [...document.querySelectorAll(".todo-widget__item")];
             const numbers = items.map((item) => item.querySelector(".todo-widget__number").textContent).join(",");
@@ -55,6 +55,30 @@
             if (!authors.includes("by streamer")) throw new Error(`Task Owner missing in ${layoutMode}`);
             if (getComputedStyle(widget).maxWidth === "none") throw new Error(`Max width missing in ${layoutMode}`);
           }
+
+          await window.TwitchTodoWidget.init({
+            layoutMode: "compact",
+            maxTasks: 20,
+            maxListHeight: 180,
+            streamerName: "streamer",
+            globalCooldownSeconds: 0,
+            userCooldownSeconds: 0,
+          });
+          for (let taskIndex = 0; taskIndex < 10; taskIndex += 1) {
+            await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: `!task Overflow task ${taskIndex}` });
+          }
+          const list = document.getElementById("todo-list");
+          if (list.clientHeight > 190) throw new Error("Task list height is not capped");
+          if (list.scrollHeight <= list.clientHeight) throw new Error("Task list does not overflow");
+          if (document.getElementById("todo-widget").dataset.hideScrollbar !== "true") {
+            throw new Error("Scrollbar hiding is not enabled by default");
+          }
+          if (!list.querySelector(".todo-widget__item.is-scroll-clone[aria-hidden='true']")) {
+            throw new Error("Infinite auto-scroll clones were not created");
+          }
+          const initialScrollTop = list.scrollTop;
+          await new Promise((resolve) => setTimeout(resolve, 2200));
+          if (list.scrollTop <= initialScrollTop) throw new Error("Task list auto-scroll did not move");
 
           const positionChecks = [
             { position: "top-left", edge: "top", side: "left" },
