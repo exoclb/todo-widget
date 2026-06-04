@@ -175,6 +175,8 @@ Use this for intermission, chatting, challenge streams, or community-driven segm
 
 ## StreamElements Setup
 
+For a beginner-friendly walkthrough, see [Twitch Todo Widget Setup Guide](docs/SETUP.md).
+
 1. Create a custom widget in your StreamElements overlay.
 2. Paste each `widget.*` file into the matching editor tab.
 3. Paste `widget.json` into the Fields tab.
