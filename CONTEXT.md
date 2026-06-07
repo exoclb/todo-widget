@@ -131,6 +131,7 @@ _Avoid_: Password reset, token refresh
 **Hosted Overlay**:
 An overlay experience served directly by the widget platform through an overlay link.
 _Avoid_: StreamElements install, copied widget
+_Note_: It reads Overlay State at initialization time and is read-only by default.
 
 **Saved Preview**:
 A dashboard preview that renders the same saved overlay state used by the hosted overlay.
@@ -147,6 +148,7 @@ _Avoid_: Hosted overlay
 **Overlay State**:
 The complete current public-read state for a streamer profile that determines what its overlay link renders and contains only data safe to show on stream.
 _Avoid_: Snapshot, payload, API response
+_Note_: For the Task Widget, `widgets[].data.todos` is the render input for Hosted Overlay.
 
 **Overlay Summary**:
 Public-read derived state for a streamer profile that combines information across widgets without making widgets depend on each other directly.

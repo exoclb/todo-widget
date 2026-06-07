@@ -81,6 +81,7 @@
   const state = {
     config: { ...DEFAULT_CONFIG },
     storage: null,
+    renderState: null,
     commandQueue: Promise.resolve(),
     cleanupTimer: null,
     autoScrollFrame: null,
@@ -153,6 +154,20 @@
     return slug || fallback;
   }
 
+  function normalizeVoteCount(value) {
+    const count = Number(value);
+    if (!Number.isFinite(count) || count < 0) return 0;
+    return Math.floor(count);
+  }
+
+  function parseSnapshotTaskId(todo, fallback) {
+    const taskNumber = Number(todo && todo.taskNumber);
+    if (Number.isInteger(taskNumber) && taskNumber > 0) return taskNumber;
+    const match = String((todo && todo.id) || "").match(/(\d+)$/);
+    const parsed = match ? Number(match[1]) : 0;
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
   const platformAdapter = {
     isOverlayConfig(value) {
       return isPlainObject(value) && Array.isArray(value.widgets) && isPlainObject(value.profile);
@@ -192,6 +207,35 @@
         accentColor: themeTokens.accentColor || themeTokens.accent,
         backgroundOpacity: themeTokens.backgroundOpacity,
       };
+    },
+
+    toStoredState(platformConfig) {
+      const taskWidget = this.findTaskWidget(platformConfig);
+      const data = taskWidget && isPlainObject(taskWidget.data) ? taskWidget.data : {};
+      const todos = Array.isArray(data.todos) ? data.todos : [];
+      const tasks = todos
+        .filter((todo) => todo && typeof todo === "object")
+        .map((todo, index) => {
+          const id = parseSnapshotTaskId(todo, index + 1);
+          const title = String(todo.title || todo.text || "").trim();
+          const authorName = String(todo.authorName || todo.createdBy || "viewer").trim() || "viewer";
+          const authorId = String(todo.authorId || todo.authorKey || authorName || `snapshot-${id}`);
+          const createdAt = Number(todo.createdAt) || index + 1;
+          return {
+            id,
+            text: title,
+            authorId,
+            authorKey: normalizeName(authorId || authorName),
+            authorName,
+            status: todo.isDone ? "completed" : "active",
+            createdAt,
+            completedAt: todo.isDone ? Number(todo.completedAt) || createdAt : null,
+            voteCount: normalizeVoteCount(todo.voteCount),
+            votes: normalizeVotes(todo.votes),
+          };
+        });
+      const maxId = tasks.reduce((current, task) => Math.max(current, task.id), 0);
+      return normalizeStoredState({ tasks, nextId: maxId + 1 });
     },
 
     resolveSource(fieldData) {
@@ -464,6 +508,7 @@
           status: task.status === "completed" ? "completed" : "active",
           createdAt: Number(task.createdAt) || Date.now(),
           completedAt: task.completedAt ? Number(task.completedAt) : null,
+          voteCount: normalizeVoteCount(task.voteCount),
           votes: normalizeVotes(task.votes),
         }))
         .filter((task) => Number.isInteger(task.id) && task.id > 0 && task.text),
@@ -494,7 +539,8 @@
   }
 
   function getVoteCount(task) {
-    return Object.keys(task.votes || {}).length;
+    const voteKeys = Object.keys(task.votes || {});
+    return voteKeys.length || normalizeVoteCount(task.voteCount);
   }
 
   function findVotedTask(tasks, userKey) {
@@ -643,6 +689,11 @@
   async function handleCommand(chatEvent) {
     const parsed = parseCommand(chatEvent.message);
     if (!parsed) return;
+    if (!state.storage) {
+      updateDiagnosticOverlay({ lastCommand: `ignored ${parsed.command}: read-only overlay` });
+      debugLog("command ignored", { command: parsed.command, reason: "read_only_overlay" });
+      return;
+    }
     updateDiagnosticOverlay({ lastCommand: `processing ${parsed.command}` });
 
     const commands = state.config;
@@ -789,6 +840,7 @@
 
   function scheduleCleanup(stored) {
     clearTimeout(state.cleanupTimer);
+    if (!state.storage) return;
     const completedTasks = stored.tasks.filter((task) => task.status === "completed" && task.completedAt);
     if (!completedTasks.length) return;
     const now = Date.now();
@@ -1028,14 +1080,19 @@
   }
 
   async function init(fieldData) {
+    clearTimeout(state.cleanupTimer);
+    state.cleanupTimer = null;
+    stopAutoScroll();
     state.config = buildConfig(fieldData);
-    state.storage = createStorageAdapter();
+    const overlayState = platformAdapter.isOverlayConfig(fieldData) ? platformAdapter.toStoredState(fieldData) : null;
+    state.storage = overlayState ? null : createStorageAdapter();
+    state.renderState = overlayState;
     applyAppearance();
     loadGoogleFont(state.config.fontFamily);
-    const stored = cleanupExpiredTasks(await state.storage.get(), Date.now());
-    await state.storage.set(stored);
+    const stored = overlayState || cleanupExpiredTasks(await state.storage.get(), Date.now());
+    if (!overlayState) await state.storage.set(stored);
     render(stored);
-    scheduleCleanup(stored);
+    if (!overlayState) scheduleCleanup(stored);
     updateDiagnosticOverlay({ status: "loaded", lastCommand: `add=${state.config.addCommand}` });
     debugLog("widget initialized", { config: state.config });
   }
@@ -1110,10 +1167,12 @@
       return { ...state.config };
     },
     async getOverlaySnapshot() {
+      if (state.renderState) return platformAdapter.buildSnapshot(state.config, state.renderState);
       if (!state.storage) state.storage = createStorageAdapter();
       return platformAdapter.buildSnapshot(state.config, await state.storage.get());
     },
     async getState() {
+      if (state.renderState) return normalizeStoredState(state.renderState);
       if (!state.storage) state.storage = createStorageAdapter();
       return state.storage.get();
     },

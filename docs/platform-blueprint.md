@@ -85,6 +85,23 @@ For the MVP path:
   changes are not the hosted-platform Saved Preview model.
 - The Platform snapshot panel is read-only inspection for the future contract.
 
+## Hosted Overlay Render Input
+
+Hosted Overlay must be able to render directly from saved Overlay State. For the
+Task Widget, `widgets[].data.todos` is the public-read task list used by the overlay
+link at initialization time.
+
+For the MVP path:
+
+- When initialized with Overlay State, the widget renders `widgets[].data.todos`
+  instead of StreamElements storage or local preview storage.
+- Hosted Overlay is read-only by default: chat commands and dashboard writes must be
+  handled outside the public overlay render surface.
+- `voteCount` is render-facing derived data. Public Overlay State must not expose
+  private voter records just to display a vote total.
+- StreamElements installs remain storage-backed and keep using the existing field
+  data path.
+
 ## Task Widget Settings Ownership
 
 Task Widget settings are split by the part of the future platform that needs them.
