@@ -131,7 +131,9 @@ a task left the active list:
 ```json
 {
   "id": "history-1",
+  "taskListCycleId": "cycle-1",
   "taskId": "task-1",
+  "taskNumber": 3,
   "text": "Review next game idea",
   "createdBy": "viewer-name",
   "createdAt": "2026-06-07T00:00:00.000Z",
@@ -147,14 +149,28 @@ For the MVP path:
 
 - Task History is not part of `widgets[].data.todos`, `summary`, or any public
   Overlay State field.
+- `taskListCycleId` identifies the Task List Cycle that produced the visible task
+  number, so later history views can interpret repeated `taskNumber` values after a
+  Task List Reset.
 - Completed tasks may appear briefly in the active overlay state, but once they leave
-  the Task Widget they become dashboard-private history.
-- Removed tasks and Task List Reset results are recorded in Task History without
-  exposing removed task text in Hosted Overlay.
+  the Task Widget they become dashboard-private history with `outcome: "completed"`.
+- Removed tasks are dashboard-private history with `outcome: "removed"` and should
+  preserve who removed them when that actor is known.
+- Task List Reset starts a new Task List Cycle. Reset history should be recorded
+  without exposing removed task text in Hosted Overlay.
+- Ignored Command events are not Task History. They belong in a future Command Log
+  because they explain command handling, not tasks that left the active list.
 - `outcome` should use explicit values such as `completed`, `removed`, or `reset` so
   future dashboard filters do not infer meaning from display text.
 - `source` should identify the write path, such as `chat-command` or `dashboard`, so
   dashboard audit views can explain where a change came from.
+
+Open follow-up decisions before persistence work:
+
+- Retention window for Task History.
+- Whether streamers can permanently delete history entries.
+- Whether moderator actions need immutable audit records separate from editable
+  dashboard history.
 
 ## Current Compatibility Contract
 
