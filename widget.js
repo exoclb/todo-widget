@@ -2,7 +2,13 @@
   "use strict";
 
   const STORAGE_KEY = "twitchTodoWidgetState";
+  const PLATFORM_SCHEMA_VERSION = 1;
+  const TODO_WIDGET_TYPE = "todo";
   const DEFAULT_CONFIG = {
+    platformSchemaVersion: PLATFORM_SCHEMA_VERSION,
+    profileSlug: "demo-streamer",
+    profileDisplayName: "Demo Streamer",
+    overlayRefreshIntervalMs: 3000,
     titleText: "STREAM TASKS",
     titleDisplayMode: "text",
     clockFormat: "24h",
@@ -134,6 +140,123 @@
     return VALID_THEMES.has(value) ? value : DEFAULT_CONFIG.themePreset;
   }
 
+  function isPlainObject(value) {
+    return Boolean(value && typeof value === "object" && !Array.isArray(value));
+  }
+
+  function slugify(value, fallback) {
+    const slug = String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return slug || fallback;
+  }
+
+  const platformAdapter = {
+    isOverlayConfig(value) {
+      return isPlainObject(value) && Array.isArray(value.widgets) && isPlainObject(value.profile);
+    },
+
+    findTaskWidget(platformConfig) {
+      const widgets = Array.isArray(platformConfig.widgets) ? platformConfig.widgets : [];
+      return (
+        widgets.find((widget) => widget && widget.type === TODO_WIDGET_TYPE && widget.enabled !== false) ||
+        widgets.find((widget) => widget && widget.type === TODO_WIDGET_TYPE) ||
+        null
+      );
+    },
+
+    toFieldData(platformConfig) {
+      const profile = isPlainObject(platformConfig.profile) ? platformConfig.profile : {};
+      const overlay = isPlainObject(platformConfig.overlay) ? platformConfig.overlay : {};
+      const theme = isPlainObject(platformConfig.theme) ? platformConfig.theme : {};
+      const themeTokens = isPlainObject(theme.tokens) ? theme.tokens : theme;
+      const taskWidget = this.findTaskWidget(platformConfig);
+      const taskSettings = taskWidget && isPlainObject(taskWidget.settings) ? taskWidget.settings : {};
+
+      return {
+        platformSchemaVersion: platformConfig.schemaVersion || DEFAULT_CONFIG.platformSchemaVersion,
+        profileSlug: profile.slug,
+        profileDisplayName: profile.displayName,
+        overlayRefreshIntervalMs: overlay.refreshIntervalMs,
+        titleText: taskWidget && taskWidget.title,
+        emptyText: taskSettings.emptyText,
+        position: taskWidget && taskWidget.position,
+        maxTasks: taskSettings.maxItems,
+        enableVoting: taskSettings.enableVoting,
+        votePrioritySort: taskSettings.votePrioritySort,
+        layoutMode: taskSettings.layoutMode,
+        themePreset: themeTokens.themePreset,
+        fontFamily: themeTokens.fontFamily,
+        accentColor: themeTokens.accentColor || themeTokens.accent,
+        backgroundOpacity: themeTokens.backgroundOpacity,
+      };
+    },
+
+    resolveSource(fieldData) {
+      if (!this.isOverlayConfig(fieldData)) return fieldData || {};
+      return this.toFieldData(fieldData);
+    },
+
+    buildSnapshot(config, stored) {
+      const tasks = normalizeStoredState(stored).tasks;
+      const orderedTasks = getOrderedTasks(tasks);
+      return {
+        schemaVersion: config.platformSchemaVersion,
+        profile: {
+          slug: config.profileSlug,
+          displayName: config.profileDisplayName,
+        },
+        overlay: {
+          refreshIntervalMs: config.overlayRefreshIntervalMs,
+        },
+        summary: {},
+        theme: {
+          tokens: {
+            themePreset: config.themePreset,
+            fontFamily: config.fontFamily,
+            accentColor: config.accentColor,
+            backgroundOpacity: config.backgroundOpacity,
+            panelImage: config.panelImage,
+            frameImage: config.frameImage,
+            taskIconImage: config.taskIconImage,
+          },
+        },
+        widgets: [
+          {
+            id: "todo-main",
+            type: TODO_WIDGET_TYPE,
+            title: config.titleText,
+            enabled: true,
+            position: config.position,
+            sortOrder: 1,
+            settings: {
+              emptyText: config.emptyText,
+              maxItems: config.maxTasks,
+              showCompleted: true,
+              showProgress: true,
+              enableVoting: config.enableVoting,
+              votePrioritySort: config.votePrioritySort,
+              layoutMode: config.layoutMode,
+            },
+            data: {
+              todos: orderedTasks.map((task, index) => ({
+                id: `task-${task.id}`,
+                taskNumber: task.id,
+                title: task.text,
+                authorName: task.authorName,
+                isDone: task.status === "completed",
+                voteCount: getVoteCount(task),
+                sortOrder: index + 1,
+              })),
+            },
+          },
+        ],
+      };
+    },
+  };
+
   function normalizeLabel(value, fallback) {
     const label = String(value || fallback).replace(/\s+/g, " ").trim();
     return label || fallback;
@@ -150,11 +273,30 @@
   }
 
   function buildConfig(fieldData) {
-    const source = fieldData || {};
+    const source = platformAdapter.resolveSource(fieldData);
     const layoutMode = VALID_LAYOUT_MODES.has(source.layoutMode) ? source.layoutMode : DEFAULT_CONFIG.layoutMode;
     return {
       ...DEFAULT_CONFIG,
       ...source,
+      platformSchemaVersion: clampNumber(
+        source.platformSchemaVersion,
+        DEFAULT_CONFIG.platformSchemaVersion,
+        1,
+        PLATFORM_SCHEMA_VERSION,
+      ),
+      profileSlug: slugify(
+        source.profileSlug || source.streamerName || source.profileDisplayName,
+        DEFAULT_CONFIG.profileSlug,
+      ),
+      profileDisplayName:
+        String(source.profileDisplayName || source.streamerName || DEFAULT_CONFIG.profileDisplayName).trim() ||
+        DEFAULT_CONFIG.profileDisplayName,
+      overlayRefreshIntervalMs: clampNumber(
+        source.overlayRefreshIntervalMs,
+        DEFAULT_CONFIG.overlayRefreshIntervalMs,
+        1000,
+        30000,
+      ),
       titleText: String(source.titleText || DEFAULT_CONFIG.titleText).trim() || DEFAULT_CONFIG.titleText,
       titleDisplayMode: VALID_TITLE_DISPLAY_MODES.has(source.titleDisplayMode)
         ? source.titleDisplayMode
@@ -966,6 +1108,10 @@
     },
     getConfig() {
       return { ...state.config };
+    },
+    async getOverlaySnapshot() {
+      if (!state.storage) state.storage = createStorageAdapter();
+      return platformAdapter.buildSnapshot(state.config, await state.storage.get());
     },
     async getState() {
       if (!state.storage) state.storage = createStorageAdapter();

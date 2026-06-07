@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Platform Snapshot Smoke</title>
+    <link rel="stylesheet" href="../../widget.css">
+    <style>
+      pre {
+        position: fixed;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 8px;
+        background: #ffffff;
+        color: #111111;
+      }
+    </style>
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <div id="todo-widget" class="todo-widget" aria-live="polite">
+      <div class="todo-widget__panel">
+        <header class="todo-widget__header">
+          <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+          <div class="todo-widget__counter" id="todo-counter">0/10</div>
+        </header>
+        <ol class="todo-widget__list" id="todo-list"></ol>
+        <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+      </div>
+    </div>
+    <pre id="result">RUNNING</pre>
+    <script src="../../widget.js"></script>
+    <script>
+      const result = document.getElementById("result");
+
+      function assert(condition, message) {
+        if (!condition) throw new Error(message);
+      }
+
+      function getTodoWidget(snapshot) {
+        return snapshot.widgets.find((widget) => widget.type === "todo");
+      }
+
+      (async () => {
+        try {
+          localStorage.clear();
+          await window.TwitchTodoWidget.init({
+            platformSchemaVersion: 1,
+            profileSlug: "snapshot-streamer",
+            profileDisplayName: "Snapshot Streamer",
+            overlayRefreshIntervalMs: 4000,
+            titleText: "SNAPSHOT TASKS",
+            themePreset: "material-dark",
+            accentColor: "#22c55e",
+            globalCooldownSeconds: 0,
+            userCooldownSeconds: 0,
+          });
+
+          const emptySnapshot = await window.TwitchTodoWidget.getOverlaySnapshot();
+          const emptyTodoWidget = getTodoWidget(emptySnapshot);
+          assert(emptySnapshot.schemaVersion === 1, "Schema version missing");
+          assert(emptySnapshot.profile.slug === "snapshot-streamer", "Profile slug missing");
+          assert(emptySnapshot.profile.displayName === "Snapshot Streamer", "Profile display name missing");
+          assert(emptySnapshot.overlay.refreshIntervalMs === 4000, "Overlay refresh interval missing");
+          assert(emptySnapshot.summary && typeof emptySnapshot.summary === "object", "Overlay summary missing");
+          assert(Object.keys(emptySnapshot.summary).length === 0, "MVP overlay summary should be empty");
+          assert(emptySnapshot.theme.tokens.themePreset === "material-dark", "Theme token missing");
+          assert(emptySnapshot.theme.tokens.accentColor === "#22c55e", "Accent token missing");
+          assert(emptyTodoWidget, "Todo widget missing");
+          assert(emptyTodoWidget.title === "SNAPSHOT TASKS", "Todo title missing");
+          assert(Array.isArray(emptyTodoWidget.data.todos), "Todo data list missing");
+          assert(emptyTodoWidget.data.todos.length === 0, "Empty snapshot should have no todos");
+
+          await window.TwitchTodoWidget.enqueueCommand({
+            message: "!task Snapshot contract task",
+            displayName: "ViewerOne",
+            username: "viewerone",
+            authorId: "viewer-one",
+            badges: [],
+            roles: [],
+          });
+
+          const activeSnapshot = await window.TwitchTodoWidget.getOverlaySnapshot();
+          const activeTodoWidget = getTodoWidget(activeSnapshot);
+          const [todo] = activeTodoWidget.data.todos;
+          assert(activeTodoWidget.data.todos.length === 1, "Snapshot did not include added task");
+          assert(todo.id === "task-1", "Snapshot todo id is unstable");
+          assert(todo.taskNumber === 1, "Snapshot task number missing");
+          assert(todo.title === "Snapshot contract task", "Snapshot todo title missing");
+          assert(todo.authorName === "ViewerOne", "Snapshot author missing");
+          assert(todo.isDone === false, "New snapshot todo should be active");
+          assert(todo.voteCount === 0, "New snapshot todo should have no votes");
+          assert(todo.sortOrder === 1, "Snapshot todo sort order missing");
+
+          await window.TwitchTodoWidget.enqueueCommand({
+            message: "!done 1",
+            displayName: "ViewerOne",
+            username: "viewerone",
+            authorId: "viewer-one",
+            badges: [],
+            roles: [],
+          });
+
+          const completedSnapshot = await window.TwitchTodoWidget.getOverlaySnapshot();
+          const completedTodo = getTodoWidget(completedSnapshot).data.todos[0];
+          assert(completedTodo.isDone === true, "Completed snapshot todo should be done");
+
+          result.textContent = "PASS";
+        } catch (error) {
+          result.textContent = `FAIL: ${error.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>

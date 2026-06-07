@@ -141,6 +141,39 @@
         line-height: 1.35;
       }
 
+      .preview-snapshot {
+        display: grid;
+        gap: 10px;
+      }
+
+      .preview-snapshot__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .preview-snapshot__actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .preview-snapshot__output {
+        max-height: 260px;
+        min-height: 150px;
+        margin: 0;
+        overflow: auto;
+        padding: 10px;
+        border: 1px solid var(--preview-border);
+        border-radius: 6px;
+        background: rgba(15, 23, 42, 0.9);
+        color: #dbeafe;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+
       .preview-stage {
         position: relative;
         z-index: 1;
@@ -400,6 +433,17 @@
           <p class="preview-note">Preview log</p>
           <div id="preview-log" class="preview-log" aria-live="polite"></div>
         </div>
+
+        <div class="preview-snapshot">
+          <div class="preview-snapshot__header">
+            <p class="preview-note">Platform snapshot</p>
+            <div class="preview-snapshot__actions">
+              <button id="snapshot-refresh" class="preview-button" type="button">Refresh</button>
+              <button id="snapshot-copy" class="preview-button" type="button">Copy</button>
+            </div>
+          </div>
+          <pre id="snapshot-output" class="preview-snapshot__output" tabindex="0" aria-live="polite">{}</pre>
+        </div>
       </section>
 
       <section class="preview-stage" aria-label="Widget preview stage">
@@ -498,9 +542,27 @@
         return first ? first.id : null;
       }
 
+      async function refreshSnapshot() {
+        const output = document.getElementById("snapshot-output");
+        const snapshot = await window.TwitchTodoWidget.getOverlaySnapshot();
+        output.textContent = JSON.stringify(snapshot, null, 2);
+      }
+
+      async function copySnapshot() {
+        const output = document.getElementById("snapshot-output");
+        try {
+          await navigator.clipboard.writeText(output.textContent);
+          output.dataset.copyStatus = "copied";
+        } catch (error) {
+          output.dataset.copyStatus = "manual";
+          output.focus();
+        }
+      }
+
       document.addEventListener("DOMContentLoaded", async () => {
         window.TwitchTodoWidget.setPreviewLog(document.getElementById("preview-log"));
         await window.TwitchTodoWidget.init(getPreviewFieldData());
+        await refreshSnapshot();
 
         [
           "theme-preset",
@@ -526,8 +588,9 @@
           "task-icon-image-url",
           "task-icon-image-opacity",
         ].forEach((id) => {
-          document.getElementById(id).addEventListener("input", () => {
-            window.TwitchTodoWidget.init(getPreviewFieldData());
+          document.getElementById(id).addEventListener("input", async () => {
+            await window.TwitchTodoWidget.init(getPreviewFieldData());
+            await refreshSnapshot();
           });
         });
 
@@ -535,8 +598,12 @@
           event.preventDefault();
           const input = document.getElementById("command");
           await sendMockMessage(input.value);
+          await refreshSnapshot();
           input.focus();
         });
+
+        document.getElementById("snapshot-refresh").addEventListener("click", refreshSnapshot);
+        document.getElementById("snapshot-copy").addEventListener("click", copySnapshot);
 
         document.querySelectorAll("[data-action]").forEach((button) => {
           button.addEventListener("click", async () => {
@@ -581,6 +648,7 @@
               role.value = previousRole;
               username.value = previousUsername;
             }
+            await refreshSnapshot();
           });
         });
       });

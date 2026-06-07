@@ -60,6 +60,8 @@ http://localhost:8000/preview.html
 
 The preview includes a mock username, role selector, command input, quick action buttons, and debug log.
 It also includes controls for Theme Presets, Quest Mode wording, Layout Modes, animations, panel images, frame images, and task icons.
+The Platform snapshot panel shows the read-only Overlay State produced from the current fields and persisted task state.
+Use it to inspect the future hosted-platform contract without changing StreamElements behavior.
 
 ## Smoke Test
 
@@ -69,7 +71,7 @@ Run the lightweight smoke suite from this folder:
 bash scripts/smoke-test.sh
 ```
 
-The command validates `widget.json`, starts a temporary local preview server, and runs browser smoke checks for theme wording, animations, layout modes, custom images, and preview controls. Browser checks require Chromium or Google Chrome on your machine; if neither is available, the command still validates the widget field JSON and skips browser checks.
+The command validates `widget.json`, starts a temporary local preview server, and runs browser smoke checks for theme wording, animations, layout modes, custom images, preview controls, and the Platform snapshot contract. Browser checks require Chromium or Google Chrome on your machine; if neither is available, the command still validates the widget field JSON and skips browser checks.
 
 ## Default Commands
 

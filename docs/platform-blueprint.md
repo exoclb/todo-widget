@@ -1,0 +1,103 @@
+# Widget Platform Blueprint
+
+## Direction
+
+This project is currently a StreamElements task overlay. The long-term direction is a
+stream widget platform where streamers manage widget state in one dashboard and use
+one overlay link in OBS or another streaming tool.
+
+## SSG / SSOT Rule
+
+For this project, SSG means single source governance:
+
+- `widget.json` remains the StreamElements Fields source for the current widget.
+- `widget.js` converts those fields and the persisted task state into a platform
+  overlay snapshot.
+- Future dashboard data should use the same platform snapshot shape.
+- Overlay rendering should read from the snapshot shape instead of inventing a
+  separate data contract.
+
+## Platform Snapshot Shape
+
+The runtime exposes this shape through `window.TwitchTodoWidget.getOverlaySnapshot()`.
+
+```json
+{
+  "schemaVersion": 1,
+  "profile": {
+    "slug": "demo-streamer",
+    "displayName": "Demo Streamer"
+  },
+  "overlay": {
+    "refreshIntervalMs": 3000
+  },
+  "summary": {},
+  "theme": {
+    "tokens": {}
+  },
+  "widgets": [
+    {
+      "id": "todo-main",
+      "type": "todo",
+      "title": "STREAM TASKS",
+      "enabled": true,
+      "position": "top-right",
+      "sortOrder": 1,
+      "settings": {},
+      "data": {
+        "todos": []
+      }
+    }
+  ]
+}
+```
+
+## Local Preview Snapshot
+
+`preview.html` shows the current platform snapshot in a read-only Platform snapshot
+panel. The panel is an inspection tool only: it reads StreamElements field data and
+persisted task state, then displays the resulting Overlay State contract. Refreshing
+or copying the snapshot must not change task state.
+
+## Current Compatibility Contract
+
+The current StreamElements widget must keep working with the existing Fields format.
+That means:
+
+- Chat commands still write task state through StreamElements storage.
+- Local preview still uses `localStorage` as a fallback.
+- `widget.json` still contains StreamElements field definitions.
+- Platform fields are additive and should not replace the existing task controls yet.
+- Platform fields in `widget.json` are transitional metadata for the future hosted
+  platform. They should not be treated as active StreamElements polling or backend
+  integration features.
+
+## State Ownership
+
+The current StreamElements-only widget stores task state in StreamElements storage,
+with `localStorage` only as a local preview fallback. When the web platform is
+introduced, chat-driven task management and dashboard-driven task management must
+write to the same task list state. The dashboard must not manage a separate copy of
+tasks, because that would break the single source governance rule.
+
+## Migration Path
+
+1. Keep the StreamElements widget stable.
+2. Add platform metadata fields: profile slug, profile display name, schema version,
+   and overlay refresh interval.
+3. Convert active widget state to the platform snapshot in `widget.js`.
+4. Build future dashboard and overlay routes around the same snapshot contract.
+5. Move persistence from StreamElements storage to a backend only after the snapshot
+   contract is stable.
+
+## Future Dashboard Model
+
+When the web platform is introduced, the dashboard should manage these concepts:
+
+- Streamer profile
+- Overlay link
+- Widget instances
+- Todo widget data
+- Theme tokens
+
+The public overlay should stay read-only and render the snapshot for one profile slug.
