@@ -43,7 +43,15 @@ The runtime exposes this shape through `window.TwitchTodoWidget.getOverlaySnapsh
       "enabled": true,
       "position": "top-right",
       "sortOrder": 1,
-      "settings": {},
+      "settings": {
+        "emptyText": "No tasks yet",
+        "maxItems": 10,
+        "showCompleted": true,
+        "showProgress": true,
+        "enableVoting": false,
+        "votePrioritySort": false,
+        "layoutMode": "compact"
+      },
       "data": {
         "todos": []
       }
@@ -58,6 +66,40 @@ The runtime exposes this shape through `window.TwitchTodoWidget.getOverlaySnapsh
 panel. The panel is an inspection tool only: it reads StreamElements field data and
 persisted task state, then displays the resulting Overlay State contract. Refreshing
 or copying the snapshot must not change task state.
+
+## Task Widget Settings Ownership
+
+Task Widget settings are split by the part of the future platform that needs them.
+This keeps the hosted overlay render state small and prevents command behavior from
+leaking into the public render contract.
+
+Overlay State inputs:
+
+- Task overlay title, position, layout mode, empty text, task capacity, voting display
+  flags, and theme/image tokens belong in Overlay State because the public overlay
+  needs them to render the Task Widget.
+- `widgets[].settings` should contain render-facing Task Widget settings only.
+- `theme.tokens` should contain visual tokens needed by the hosted overlay.
+
+Chat Command Handler inputs:
+
+- Command names such as add, done, delete, reset, and vote belong to the Chat Command
+  Handler.
+- Command behavior settings such as cooldowns, task eligibility limits, owner
+  capacity, blacklist words, moderator names, and streamer fallback names belong to
+  the Chat Command Handler.
+- Command names should not be added to Hosted Overlay render state unless a future
+  command-help overlay feature explicitly needs to display them.
+
+Dashboard-private and transitional metadata:
+
+- Future platform fields in `widget.json`, such as profile slug, profile display
+  name, schema version, and overlay refresh interval, are transitional metadata for
+  the hosted platform.
+- Dashboard-only state, private moderation data, Task History, and Command Log data
+  must stay out of public Overlay State.
+- Disabled widgets and unpublished draft settings are dashboard-private until they
+  become active saved Overlay State.
 
 ## Current Compatibility Contract
 
