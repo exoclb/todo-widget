@@ -119,6 +119,43 @@ Dashboard-private and transitional metadata:
 - Disabled widgets and unpublished draft settings are dashboard-private until they
   become active saved Overlay State.
 
+## Dashboard-Private Task History
+
+Task History is a dashboard-private record of tasks that left the active Task Widget
+state. It supports streamer review and recovery without changing what viewers see in
+the public overlay.
+
+Task History entries should keep enough information for the dashboard to explain why
+a task left the active list:
+
+```json
+{
+  "id": "history-1",
+  "taskId": "task-1",
+  "text": "Review next game idea",
+  "createdBy": "viewer-name",
+  "createdAt": "2026-06-07T00:00:00.000Z",
+  "closedAt": "2026-06-07T00:05:00.000Z",
+  "outcome": "completed",
+  "closedBy": "streamer-name",
+  "source": "chat-command",
+  "voteCount": 3
+}
+```
+
+For the MVP path:
+
+- Task History is not part of `widgets[].data.todos`, `summary`, or any public
+  Overlay State field.
+- Completed tasks may appear briefly in the active overlay state, but once they leave
+  the Task Widget they become dashboard-private history.
+- Removed tasks and Task List Reset results are recorded in Task History without
+  exposing removed task text in Hosted Overlay.
+- `outcome` should use explicit values such as `completed`, `removed`, or `reset` so
+  future dashboard filters do not infer meaning from display text.
+- `source` should identify the write path, such as `chat-command` or `dashboard`, so
+  dashboard audit views can explain where a change came from.
+
 ## Current Compatibility Contract
 
 The current StreamElements widget must keep working with the existing Fields format.
