@@ -67,6 +67,24 @@ panel. The panel is an inspection tool only: it reads StreamElements field data 
 persisted task state, then displays the resulting Overlay State contract. Refreshing
 or copying the snapshot must not change task state.
 
+## Saved Preview Contract
+
+Saved Preview is the dashboard-facing preview mode for the hosted platform MVP. It
+must render the same saved Overlay State that Hosted Overlay renders for a Streamer
+Profile. It is not a draft renderer and must not introduce a preview-only state
+contract.
+
+For the MVP path:
+
+- Saving dashboard changes updates Overlay State directly.
+- Saved Preview and Hosted Overlay read the same saved Overlay State.
+- Draft Preview and publish/draft workflows are out of scope until a future dashboard
+  flow needs unpublished changes.
+- Current `preview.html` remains a local development preview and StreamElements
+  compatibility tool. It can simulate field changes locally, but those local form
+  changes are not the hosted-platform Saved Preview model.
+- The Platform snapshot panel is read-only inspection for the future contract.
+
 ## Task Widget Settings Ownership
 
 Task Widget settings are split by the part of the future platform that needs them.
