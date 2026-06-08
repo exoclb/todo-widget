@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hosted Overlay</title>
+    <link rel="stylesheet" href="widget.css">
+    <style>
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        background: transparent;
+        overflow: hidden;
+      }
+
+      body[data-overlay-status="inactive"] .todo-widget,
+      body[data-overlay-status="empty"] .todo-widget {
+        display: none;
+      }
+
+      .hosted-overlay__disabled {
+        display: none;
+        width: 100vw;
+        height: 100vh;
+        background: transparent;
+      }
+
+      body[data-overlay-status="inactive"] .hosted-overlay__disabled,
+      body[data-overlay-status="empty"] .hosted-overlay__disabled {
+        display: block;
+      }
+    </style>
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body data-overlay-status="loading">
+    <div id="todo-widget" class="todo-widget" aria-live="polite">
+      <div class="todo-widget__panel">
+        <header class="todo-widget__header">
+          <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+          <div class="todo-widget__counter" id="todo-counter">0/10</div>
+        </header>
+        <ol class="todo-widget__list" id="todo-list"></ol>
+        <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+      </div>
+    </div>
+    <div class="hosted-overlay__disabled" aria-hidden="true"></div>
+
+    <script src="widget.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        function readEmbeddedOverlayState() {
+          if (window.__TWITCH_TODO_HOSTED_OVERLAY_STATE__) {
+            return window.__TWITCH_TODO_HOSTED_OVERLAY_STATE__;
+          }
+
+          const stateElement = document.getElementById("hosted-overlay-state");
+          if (stateElement) {
+            try {
+              return JSON.parse(stateElement.textContent || "null");
+            } catch (error) {
+              // Fall through to localStorage dev/test state.
+            }
+          }
+
+          try {
+            const storedState = window.localStorage.getItem("twitchTodoHostedOverlayState");
+            return storedState ? JSON.parse(storedState) : null;
+          } catch (error) {
+            return null;
+          }
+        }
+
+        function isOverlayState(value) {
+          return Boolean(value && typeof value === "object" && value.profile && Array.isArray(value.widgets));
+        }
+
+        function toActiveOverlayState(overlayState) {
+          const activeWidgets = overlayState.widgets.filter((widget) => widget && widget.enabled !== false);
+          if (!activeWidgets.length) return null;
+          return { ...overlayState, widgets: activeWidgets };
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+          const overlayState = readEmbeddedOverlayState();
+          if (!isOverlayState(overlayState) || overlayState.overlayLinkActive === false) {
+            document.body.dataset.overlayStatus = "inactive";
+            return;
+          }
+
+          const activeOverlayState = toActiveOverlayState(overlayState);
+          if (!activeOverlayState) {
+            document.body.dataset.overlayStatus = "empty";
+            return;
+          }
+
+          await window.TwitchTodoWidget.init(activeOverlayState);
+          document.body.dataset.overlayStatus = "active";
+        });
+      })();
+    </script>
+  </body>
+</html>
