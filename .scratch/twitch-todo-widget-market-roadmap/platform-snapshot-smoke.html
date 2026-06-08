@@ -107,6 +107,47 @@
           const completedTodo = getTodoWidget(completedSnapshot).data.todos[0];
           assert(completedTodo.isDone === true, "Completed snapshot todo should be done");
 
+          await window.TwitchTodoWidget.init({
+            platformSchemaVersion: 1,
+            profileSlug: "dashboard-streamer",
+            profileDisplayName: "Dashboard Streamer",
+            titleText: "DASHBOARD TASKS",
+            maxTasks: 1,
+            globalCooldownSeconds: 0,
+            userCooldownSeconds: 0,
+          });
+          await window.TwitchTodoWidget.dashboard.resetTasks();
+
+          const dashboardAdd = await window.TwitchTodoWidget.dashboard.addTask("Dashboard saved task");
+          assert(dashboardAdd && dashboardAdd.nextState, "Dashboard add did not write Task List State");
+          const dashboardState = await window.TwitchTodoWidget.getState();
+          assert(dashboardState.tasks.length === 1, "Dashboard task missing from Task List State");
+          assert(dashboardState.tasks[0].source === "dashboard", "Dashboard task source missing");
+          assert(dashboardState.tasks[0].authorKey === "", "Dashboard task received a Viewer Task Owner");
+          assert(dashboardState.tasks[0].authorName === "Dashboard Streamer", "Dashboard task author label missing");
+
+          const capacityResult = await window.TwitchTodoWidget.dashboard.addTask("Dashboard overflow task");
+          assert(capacityResult.reason === "task_limit_full", "Dashboard add ignored Task Capacity");
+          const capacityState = await window.TwitchTodoWidget.getState();
+          assert(capacityState.tasks.length === 1, "Dashboard overflow changed Task List State");
+
+          await window.TwitchTodoWidget.dashboard.editTaskText(1, "Dashboard edited task");
+          const editedSnapshot = await window.TwitchTodoWidget.getOverlaySnapshot();
+          const editedTodo = getTodoWidget(editedSnapshot).data.todos[0];
+          assert(editedTodo.title === "Dashboard edited task", "Dashboard edit did not reach Overlay State");
+          assert(editedTodo.authorName === "Dashboard Streamer", "Dashboard edit changed author label");
+
+          await window.TwitchTodoWidget.dashboard.completeTask(1);
+          const dashboardCompleted = getTodoWidget(await window.TwitchTodoWidget.getOverlaySnapshot()).data.todos[0];
+          assert(dashboardCompleted.isDone === true, "Dashboard complete did not reach Overlay State");
+
+          await window.TwitchTodoWidget.dashboard.removeTask(1);
+          assert((await window.TwitchTodoWidget.getState()).tasks.length === 0, "Dashboard remove did not update Task List State");
+
+          await window.TwitchTodoWidget.dashboard.addTask("Dashboard reset task");
+          await window.TwitchTodoWidget.dashboard.resetTasks();
+          assert((await window.TwitchTodoWidget.getState()).tasks.length === 0, "Dashboard reset did not clear Task List State");
+
           localStorage.setItem(
             "twitchTodoWidgetState",
             JSON.stringify({

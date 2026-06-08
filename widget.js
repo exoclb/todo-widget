@@ -228,6 +228,7 @@
             authorKey: normalizeName(authorId || authorName),
             authorName,
             status: todo.isDone ? "completed" : "active",
+            source: String(todo.source || "overlay-state"),
             createdAt,
             completedAt: todo.isDone ? Number(todo.completedAt) || createdAt : null,
             voteCount: normalizeVoteCount(todo.voteCount),
@@ -507,6 +508,7 @@
             authorKey: String(task.authorKey || ""),
             authorName: String(task.authorName || "viewer"),
             status: task.status === "completed" ? "completed" : "active",
+            source: String(task.source || "chat-command"),
             createdAt: Number(task.createdAt) || Date.now(),
             completedAt: task.completedAt ? Number(task.completedAt) : null,
             voteCount: normalizeVoteCount(task.voteCount),
@@ -567,6 +569,66 @@
         if (a.status !== "active") return byCreatedAt(a, b);
         return this.voteCount(b) - this.voteCount(a) || byCreatedAt(a, b);
       });
+    },
+
+    addDashboardTask(stored, taskText, config, now) {
+      const activeTasks = this.activeTasks(stored.tasks);
+      if (activeTasks.length >= config.maxTasks) return { reason: "task_limit_full" };
+      return {
+        nextState: {
+          tasks: [
+            ...stored.tasks,
+            {
+              id: stored.nextId,
+              text: taskText,
+              authorId: "",
+              authorKey: "",
+              authorName: config.profileDisplayName || config.streamerName || "Dashboard",
+              status: "active",
+              source: "dashboard",
+              createdAt: now,
+              completedAt: null,
+              votes: {},
+            },
+          ],
+          nextId: stored.nextId + 1,
+        },
+      };
+    },
+
+    editTaskText(stored, idText, taskText) {
+      const id = Number(idText);
+      if (!Number.isInteger(id)) return { reason: "invalid_id" };
+      let changed = false;
+      const tasks = stored.tasks.map((task) => {
+        if (task.id !== id || task.status !== "active") return task;
+        changed = true;
+        return { ...task, text: taskText };
+      });
+      return changed ? { nextState: { ...stored, tasks } } : { reason: "not_found_or_not_active" };
+    },
+
+    completeTask(stored, idText, now) {
+      const id = Number(idText);
+      if (!Number.isInteger(id)) return { reason: "invalid_id" };
+      let changed = false;
+      const tasks = stored.tasks.map((task) => {
+        if (task.id !== id || task.status === "completed") return task;
+        changed = true;
+        return { ...task, status: "completed", completedAt: now };
+      });
+      return changed ? { nextState: { ...stored, tasks } } : { reason: "not_found_or_already_completed" };
+    },
+
+    removeTask(stored, idText) {
+      const id = Number(idText);
+      if (!Number.isInteger(id)) return { reason: "invalid_id" };
+      const tasks = stored.tasks.filter((task) => task.id !== id);
+      return tasks.length === stored.tasks.length ? { reason: "not_found" } : { nextState: { ...stored, tasks } };
+    },
+
+    resetTasks() {
+      return { nextState: { tasks: [], nextId: 1 } };
     },
   };
 
@@ -772,6 +834,7 @@
             authorKey: userKey,
             authorName: user.displayName || user.username || "viewer",
             status: "active",
+            source: "chat-command",
             createdAt: now,
             completedAt: null,
             votes: {},
@@ -855,6 +918,60 @@
     state.voteCooldowns.set(userKey, now + state.config.voteCooldownSeconds * 1000);
     return { nextState: { ...stored, tasks } };
   }
+
+  async function writeDashboardTaskChange(actionName, operation) {
+    if (!state.storage) {
+      debugLog("dashboard task change ignored", { action: actionName, reason: "read_only_overlay" });
+      return { reason: "read_only_overlay" };
+    }
+
+    const stored = taskListState.cleanupExpired(
+      await state.storage.get(),
+      state.config.completedVisibleSeconds,
+      Date.now(),
+    );
+    const result = operation(stored);
+    if (result && result.nextState) {
+      await state.storage.set(result.nextState);
+      render(result.nextState);
+      scheduleCleanup(result.nextState);
+      debugLog("dashboard task change accepted", { action: actionName });
+    }
+    if (result && result.reason) {
+      debugLog("dashboard task change ignored", { action: actionName, reason: result.reason });
+    }
+    return result || { reason: "unknown_dashboard_action" };
+  }
+
+  const dashboardTaskManager = {
+    async addTask(taskText) {
+      const sanitized = sanitizeTaskText(taskText);
+      if (!sanitized.ok) return { reason: sanitized.reason };
+      return writeDashboardTaskChange("add", (stored) =>
+        taskListState.addDashboardTask(stored, sanitized.text, state.config, Date.now()),
+      );
+    },
+
+    async editTaskText(idText, taskText) {
+      const sanitized = sanitizeTaskText(taskText);
+      if (!sanitized.ok) return { reason: sanitized.reason };
+      return writeDashboardTaskChange("edit", (stored) =>
+        taskListState.editTaskText(stored, idText, sanitized.text),
+      );
+    },
+
+    completeTask(idText) {
+      return writeDashboardTaskChange("complete", (stored) => taskListState.completeTask(stored, idText, Date.now()));
+    },
+
+    removeTask(idText) {
+      return writeDashboardTaskChange("remove", (stored) => taskListState.removeTask(stored, idText));
+    },
+
+    resetTasks() {
+      return writeDashboardTaskChange("reset", () => taskListState.resetTasks());
+    },
+  };
 
   function scheduleCleanup(stored) {
     clearTimeout(state.cleanupTimer);
@@ -1168,6 +1285,7 @@
     init,
     enqueueCommand,
     extractChatEvent,
+    dashboard: dashboardTaskManager,
     setPreviewLog(element) {
       state.previewLog = element;
     },

@@ -228,7 +228,7 @@
       <section class="preview-controls" aria-label="Preview controls">
         <div>
           <h1 class="preview-heading">Twitch Todo Widget</h1>
-          <p class="preview-note">Mock Twitch chat commands locally before installing the widget in StreamElements.</p>
+          <p class="preview-note">Mock Twitch chat commands and streamer dashboard task controls locally.</p>
         </div>
 
         <div class="preview-row">
@@ -251,6 +251,21 @@
           <input id="command" value="!task Check game audio" autocomplete="off">
           <button class="preview-button" type="submit">Send Command</button>
         </form>
+
+        <div class="preview-field" aria-label="Streamer dashboard task controls">
+          <label for="dashboard-task-text">Streamer dashboard</label>
+          <input id="dashboard-task-text" value="Dashboard task from streamer" autocomplete="off">
+          <div class="preview-row">
+            <input id="dashboard-task-id" inputmode="numeric" placeholder="Task #">
+            <button class="preview-button" type="button" data-dashboard-action="add">Add Task</button>
+          </div>
+          <div class="preview-actions">
+            <button class="preview-button" type="button" data-dashboard-action="edit">Edit Text</button>
+            <button class="preview-button" type="button" data-dashboard-action="complete">Complete</button>
+            <button class="preview-button" type="button" data-dashboard-action="remove">Remove</button>
+            <button class="preview-button" type="button" data-dashboard-action="reset">Reset List</button>
+          </div>
+        </div>
 
         <div class="preview-row">
           <div class="preview-field">
@@ -548,6 +563,41 @@
         output.textContent = JSON.stringify(snapshot, null, 2);
       }
 
+      async function getDashboardTaskId() {
+        const idInput = document.getElementById("dashboard-task-id");
+        const typedId = Number(idInput.value);
+        if (Number.isInteger(typedId) && typedId > 0) return typedId;
+        const firstId = await getFirstActiveId();
+        if (firstId) idInput.value = String(firstId);
+        return firstId;
+      }
+
+      async function runDashboardAction(action) {
+        const textInput = document.getElementById("dashboard-task-text");
+        const id = await getDashboardTaskId();
+        if (action === "add") {
+          const result = await window.TwitchTodoWidget.dashboard.addTask(textInput.value);
+          const stored = await window.TwitchTodoWidget.getState();
+          const lastTask = stored.tasks[stored.tasks.length - 1];
+          if (lastTask) document.getElementById("dashboard-task-id").value = String(lastTask.id);
+          return result;
+        }
+        if (action === "edit" && id) {
+          return window.TwitchTodoWidget.dashboard.editTaskText(id, textInput.value);
+        }
+        if (action === "complete" && id) {
+          return window.TwitchTodoWidget.dashboard.completeTask(id);
+        }
+        if (action === "remove" && id) {
+          return window.TwitchTodoWidget.dashboard.removeTask(id);
+        }
+        if (action === "reset") {
+          document.getElementById("dashboard-task-id").value = "";
+          return window.TwitchTodoWidget.dashboard.resetTasks();
+        }
+        return { reason: "missing_task_number" };
+      }
+
       async function copySnapshot() {
         const output = document.getElementById("snapshot-output");
         try {
@@ -604,6 +654,13 @@
 
         document.getElementById("snapshot-refresh").addEventListener("click", refreshSnapshot);
         document.getElementById("snapshot-copy").addEventListener("click", copySnapshot);
+
+        document.querySelectorAll("[data-dashboard-action]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await runDashboardAction(button.dataset.dashboardAction);
+            await refreshSnapshot();
+          });
+        });
 
         document.querySelectorAll("[data-action]").forEach((button) => {
           button.addEventListener("click", async () => {
