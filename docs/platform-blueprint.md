@@ -90,6 +90,43 @@ dashboard changes updates Overlay State directly" means the platform persists Ta
 List State first, then derives saved Overlay State for render surfaces. The MVP does
 not keep a separate Draft Preview state.
 
+## Hosted Overlay Routing
+
+Hosted Overlay routing is organized around one Streamer Profile and one active
+Overlay Link for the MVP. The public overlay route resolves the Overlay Link, loads
+the saved Overlay State for that Streamer Profile, and renders Active Widgets from
+that state.
+
+MVP route contract:
+
+- One active Overlay Link maps to one Streamer Profile.
+- The public render route returns the complete saved Overlay State for that profile
+  to the hosted overlay renderer.
+- Hosted Overlay is read-only. It must not accept dashboard writes, chat command
+  writes, debug mutations, or task management actions from the public route.
+- Hosted Overlay MVP renders the saved Overlay State it receives at initialization
+  time. Polling, realtime refresh, and live dashboard/chat updates are follow-up
+  work after state ownership is stable.
+
+Inactive Overlay Link behavior:
+
+- An inactive Overlay Link renders an empty or disabled overlay shell.
+- It must not expose Overlay State, Streamer Profile display data, widget data,
+  Task List State, Task History, Command Log data, or debug details.
+- It should be visually safe for OBS/browser-source use: transparent or empty enough
+  to avoid disrupting a live scene.
+- It may expose only a generic disabled state for local troubleshooting, not
+  streamer-specific information.
+
+Saved Preview and dashboard debug behavior are separate from public Hosted Overlay
+routing. Saved Preview is dashboard-private and can show the saved Overlay State,
+debug information, and streamer-facing diagnostics. Public Hosted Overlay must stay
+read-only and stream-safe even when the dashboard has richer inspection tools.
+
+Regenerated Overlay Link behavior is future link lifecycle work. For the MVP,
+documenting the inactive-link behavior is enough: old links become inactive and must
+stop exposing Overlay State once regeneration is introduced.
+
 ## Hosted Overlay Render Input
 
 Hosted Overlay must be able to render directly from saved Overlay State. For the
@@ -106,9 +143,6 @@ For the MVP path:
   private voter records just to display a vote total.
 - StreamElements installs remain storage-backed and keep using the existing field
   data path.
-- Hosted Overlay MVP renders the saved Overlay State it receives at initialization
-  time. Polling, realtime refresh, and live dashboard/chat updates are follow-up
-  work after state ownership is stable.
 
 ## Task Widget Settings Ownership
 
