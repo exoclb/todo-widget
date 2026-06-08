@@ -96,6 +96,12 @@ _Avoid_: Admin, dashboard manager, moderator
 The oldest-first ordered collection of tasks currently visible or pending visibility in the overlay.
 _Avoid_: Todo list, board
 
+**Task List State**:
+The single writable state for a task widget's current task list, including active
+tasks, completed tasks still visible in the overlay, task numbering, and persisted
+vote totals.
+_Avoid_: Dashboard copy, overlay copy, local task cache
+
 **Task List Cycle**:
 The period of task numbering from one task list reset until the next task list reset.
 _Avoid_: Session, batch

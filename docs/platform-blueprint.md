@@ -85,6 +85,11 @@ For the MVP path:
   changes are not the hosted-platform Saved Preview model.
 - The Platform snapshot panel is read-only inspection for the future contract.
 
+Because the hosted platform now treats Task List State as the write model, "saving
+dashboard changes updates Overlay State directly" means the platform persists Task
+List State first, then derives saved Overlay State for render surfaces. The MVP does
+not keep a separate Draft Preview state.
+
 ## Hosted Overlay Render Input
 
 Hosted Overlay must be able to render directly from saved Overlay State. For the
@@ -101,6 +106,9 @@ For the MVP path:
   private voter records just to display a vote total.
 - StreamElements installs remain storage-backed and keep using the existing field
   data path.
+- Hosted Overlay MVP renders the saved Overlay State it receives at initialization
+  time. Polling, realtime refresh, and live dashboard/chat updates are follow-up
+  work after state ownership is stable.
 
 ## Task Widget Settings Ownership
 
@@ -166,6 +174,9 @@ For the MVP path:
 
 - Task History is not part of `widgets[].data.todos`, `summary`, or any public
   Overlay State field.
+- Task History is created by the Task List State owner when a task leaves the active
+  list through completion, removal, or reset. Dashboard and chat paths send the
+  intended task change; they do not write Task History directly.
 - `taskListCycleId` identifies the Task List Cycle that produced the visible task
   number, so later history views can interpret repeated `taskNumber` values after a
   Task List Reset.
@@ -210,6 +221,36 @@ introduced, chat-driven task management and dashboard-driven task management mus
 write to the same task list state. The dashboard must not manage a separate copy of
 tasks, because that would break the single source governance rule.
 
+For the hosted platform, the Widget Platform backend owns Task List State.
+Dashboard-Driven Task Management and Chat-Driven Task Management write through that owner.
+Hosted Overlay and Saved Preview read public Overlay State derived from the same Task
+List State and remain read-only surfaces.
+
+Dashboard writes must target Task List State, not `widgets[].data.todos` directly.
+`widgets[].data.todos` is a public-read projection inside Overlay State. It exists so
+Hosted Overlay and Saved Preview can render the Task Widget, not so dashboard or chat
+paths can treat Overlay State as the write model.
+
+Task Number and Task List Cycle semantics belong to Task List State. Dashboard-created
+tasks and chat-created tasks share the same numbering sequence, Task Numbers remain
+stable within one Task List Cycle, and Task List Reset starts a new cycle with
+numbering from `1`.
+
+Voting Mode also writes to Task List State. Task List State can keep private Task
+Vote details needed for duplicate vote behavior, vote changes, cooldowns, and
+dashboard-private inspection. Public Overlay State exposes only derived `voteCount`
+for each task.
+
+This creates two compatible state paths during migration:
+
+- StreamElements Install keeps using StreamElements storage for the current copied
+  widget experience.
+- Hosted platform uses backend-owned Task List State as the write model and derives
+  Overlay State for public render surfaces.
+
+Dashboard-managed task copies are rejected. If the dashboard needs optimistic UI or
+draft controls later, those drafts must not become a second task list owner.
+
 ## Migration Path
 
 1. Keep the StreamElements widget stable.
@@ -217,8 +258,9 @@ tasks, because that would break the single source governance rule.
    and overlay refresh interval.
 3. Convert active widget state to the platform snapshot in `widget.js`.
 4. Build future dashboard and overlay routes around the same snapshot contract.
-5. Move persistence from StreamElements storage to a backend only after the snapshot
-   contract is stable.
+5. Deepen Task List State behavior into one module before adding dashboard writes.
+6. Move hosted platform persistence to backend-owned Task List State only after the
+   snapshot contract is stable.
 
 ## Future Dashboard Model
 
