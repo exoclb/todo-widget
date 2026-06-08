@@ -7,8 +7,17 @@
     <style>
       html,
       body {
-        height: 1100px;
+        width: 100%;
+        height: 920px;
         min-height: 100%;
+        background: #f4f7fb;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
         background:
           linear-gradient(135deg, rgba(63, 125, 246, 0.14) 0 25%, transparent 25% 50%, rgba(255, 184, 77, 0.16) 50% 75%, transparent 75%),
           linear-gradient(145deg, #f9fbff 0%, #e7edf6 52%, #f6f0e5 100%);
@@ -20,6 +29,7 @@
       body {
         min-height: 100vh;
         margin: 0;
+        background: transparent;
         color: #1b2635;
         font-family: Lexend, Verdana, sans-serif;
         overflow: hidden;
@@ -28,12 +38,22 @@
       .gallery {
         display: grid;
         gap: 18px;
+        box-sizing: border-box;
+        min-height: 920px;
         padding: 24px;
+        background:
+          linear-gradient(135deg, rgba(63, 125, 246, 0.14) 0 25%, transparent 25% 50%, rgba(255, 184, 77, 0.16) 50% 75%, transparent 75%),
+          linear-gradient(145deg, #f9fbff 0%, #e7edf6 52%, #f6f0e5 100%);
+        background-size:
+          48px 48px,
+          auto;
       }
 
       .gallery__header {
         display: grid;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 16px;
       }
 
       .gallery__title {
@@ -45,9 +65,27 @@
 
       .gallery__subtitle {
         margin: 0;
-        color: #657184;
-        font-size: 16px;
-        font-weight: 500;
+        color: #536175;
+        font-size: 17px;
+        font-weight: 600;
+      }
+
+      .gallery__badges {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: end;
+        gap: 8px;
+      }
+
+      .gallery__badge {
+        border: 1px solid rgba(63, 125, 246, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #2b3c55;
+        font-size: 13px;
+        font-weight: 800;
+        padding: 7px 10px;
+        box-shadow: 0 8px 22px rgba(31, 43, 62, 0.08);
       }
 
       .gallery__grid {
@@ -62,11 +100,16 @@
       }
 
       .gallery__label {
-        color: #657184;
-        font-size: 13px;
+        display: inline-flex;
+        width: max-content;
+        border: 1px solid rgba(44, 56, 74, 0.12);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #41516a;
+        font-size: 14px;
         font-weight: 700;
         letter-spacing: 0;
-        text-transform: uppercase;
+        padding: 6px 10px;
       }
 
       iframe {
@@ -81,32 +124,44 @@
       .gallery__card--wide iframe {
         height: 320px;
       }
+
+      .gallery__spacer {
+        height: 90px;
+      }
     </style>
   </head>
   <body>
     <main class="gallery">
       <header class="gallery__header">
-        <h1 class="gallery__title">Twitch Todo Widget</h1>
-        <p class="gallery__subtitle">StreamElements task overlay with themes, layout modes, Voting Mode, and custom branding controls.</p>
+        <div>
+          <h1 class="gallery__title">Twitch Todo Widget</h1>
+          <p class="gallery__subtitle">Chat-powered StreamElements tasks with themes, layouts, Voting Mode, and streamer controls.</p>
+        </div>
+        <div class="gallery__badges" aria-label="Widget highlights">
+          <span class="gallery__badge">Chat command ready</span>
+          <span class="gallery__badge">Voting included</span>
+          <span class="gallery__badge">Streamer/mod controls</span>
+        </div>
       </header>
       <section class="gallery__grid" aria-label="Widget visual examples">
         <article class="gallery__card">
-          <div class="gallery__label">Material light sidebar</div>
-          <iframe title="Material light widget" src="widget-shot.html?theme=material-light&layout=compact&mode=tasks"></iframe>
+          <div class="gallery__label">Material Light · Chat Sidebar</div>
+          <iframe title="Material light widget" src="widget-shot.html?theme=material-light&layout=compact&mode=tasks&sample=stream"></iframe>
         </article>
         <article class="gallery__card gallery__card--wide">
-          <div class="gallery__label">Tokyo Night voting board</div>
-          <iframe title="Tokyo Night board widget" src="widget-shot.html?theme=tokyo-night&layout=board&mode=quests&voting=true"></iframe>
+          <div class="gallery__label">Tokyo Night · Voting Board</div>
+          <iframe title="Tokyo Night board widget" src="widget-shot.html?theme=tokyo-night&layout=board&mode=quests&voting=true&sample=stream"></iframe>
         </article>
         <article class="gallery__card">
-          <div class="gallery__label">Catppuccin missions</div>
-          <iframe title="Catppuccin compact widget" src="widget-shot.html?theme=catppuccin&layout=compact&mode=missions&voting=true"></iframe>
+          <div class="gallery__label">Catppuccin · Live Missions</div>
+          <iframe title="Catppuccin compact widget" src="widget-shot.html?theme=catppuccin&layout=compact&mode=missions&voting=true&sample=stream"></iframe>
         </article>
         <article class="gallery__card gallery__card--wide">
-          <div class="gallery__label">Gruvbox horizontal ticker</div>
-          <iframe title="Gruvbox ticker widget" src="widget-shot.html?theme=gruvbox&layout=ticker&mode=tasks"></iframe>
+          <div class="gallery__label">Gruvbox · Stream Ticker</div>
+          <iframe title="Gruvbox ticker widget" src="widget-shot.html?theme=gruvbox&layout=ticker&mode=tasks&sample=ticker"></iframe>
         </article>
       </section>
+      <div class="gallery__spacer" aria-hidden="true"></div>
     </main>
   </body>
 </html>

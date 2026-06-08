@@ -47,6 +47,7 @@
       const layoutMode = params.get("layout") || "compact";
       const mode = params.get("mode") || "tasks";
       const voting = params.get("voting") === "true";
+      const sample = params.get("sample") || "default";
       const wording = {
         tasks: { titleText: "STREAM TASKS", singular: "Task", plural: "Tasks" },
         quests: { titleText: "QUEST BOARD", singular: "Quest", plural: "Quests" },
@@ -90,9 +91,14 @@
           voteCooldownSeconds: 0,
         });
 
-        await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Check mic levels" });
-        await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Pick next challenge" });
-        await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Review chat suggestions" });
+        const tasks =
+          sample === "ticker"
+            ? ["Hydrate", "Pick next game", "Start boss fight"]
+            : ["Check mic levels", "Pick next game", "Review chat ideas"];
+
+        for (const task of tasks) {
+          await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: `!task ${task}` });
+        }
 
         if (voting) {
           await window.TwitchTodoWidget.enqueueCommand({ ...viewer("viewer-one"), message: "!vote 2" });
