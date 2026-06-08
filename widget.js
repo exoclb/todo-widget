@@ -231,11 +231,11 @@
             createdAt,
             completedAt: todo.isDone ? Number(todo.completedAt) || createdAt : null,
             voteCount: normalizeVoteCount(todo.voteCount),
-            votes: normalizeVotes(todo.votes),
+            votes: taskListState.normalizeVotes(todo.votes),
           };
         });
       const maxId = tasks.reduce((current, task) => Math.max(current, task.id), 0);
-      return normalizeStoredState({ tasks, nextId: maxId + 1 });
+      return taskListState.normalize({ tasks, nextId: maxId + 1 });
     },
 
     resolveSource(fieldData) {
@@ -244,8 +244,8 @@
     },
 
     buildSnapshot(config, stored) {
-      const tasks = normalizeStoredState(stored).tasks;
-      const orderedTasks = getOrderedTasks(tasks);
+      const tasks = taskListState.normalize(stored).tasks;
+      const orderedTasks = taskListState.orderedTasks(tasks, config);
       return {
         schemaVersion: config.platformSchemaVersion,
         profile: {
@@ -291,7 +291,7 @@
                 title: task.text,
                 authorName: task.authorName,
                 isDone: task.status === "completed",
-                voteCount: getVoteCount(task),
+                voteCount: taskListState.voteCount(task),
                 sortOrder: index + 1,
               })),
             },
@@ -452,7 +452,7 @@
       return {
         async get() {
           const stored = await streamElementsApi.store.get(STORAGE_KEY);
-          return normalizeStoredState(stored);
+          return taskListState.normalize(stored);
         },
         async set(nextState) {
           await streamElementsApi.store.set(STORAGE_KEY, nextState);
@@ -460,7 +460,7 @@
       };
     }
 
-    let memoryState = normalizeStoredState(null);
+    let memoryState = taskListState.normalize(null);
     let localStorageRef = null;
     try {
       localStorageRef = window.localStorage;
@@ -472,7 +472,7 @@
       async get() {
         if (!localStorageRef) return memoryState;
         try {
-          memoryState = normalizeStoredState(JSON.parse(localStorageRef.getItem(STORAGE_KEY) || "null"));
+          memoryState = taskListState.normalize(JSON.parse(localStorageRef.getItem(STORAGE_KEY) || "null"));
           return memoryState;
         } catch (error) {
           debugLog("localStorage parse failed", { message: error.message });
@@ -480,7 +480,7 @@
         }
       },
       async set(nextState) {
-        memoryState = normalizeStoredState(nextState);
+        memoryState = taskListState.normalize(nextState);
         if (!localStorageRef) return;
         try {
           localStorageRef.setItem(STORAGE_KEY, JSON.stringify(nextState));
@@ -492,69 +492,83 @@
     };
   }
 
-  function normalizeStoredState(stored) {
-    const base = stored && typeof stored === "object" ? stored : {};
-    const tasks = Array.isArray(base.tasks) ? base.tasks : [];
-    const nextId = Number.isInteger(base.nextId) && base.nextId > 0 ? base.nextId : 1;
-    return {
-      tasks: tasks
-        .filter((task) => task && typeof task === "object")
-        .map((task) => ({
-          id: Number(task.id),
-          text: String(task.text || ""),
-          authorId: String(task.authorId || ""),
-          authorKey: String(task.authorKey || ""),
-          authorName: String(task.authorName || "viewer"),
-          status: task.status === "completed" ? "completed" : "active",
-          createdAt: Number(task.createdAt) || Date.now(),
-          completedAt: task.completedAt ? Number(task.completedAt) : null,
-          voteCount: normalizeVoteCount(task.voteCount),
-          votes: normalizeVotes(task.votes),
-        }))
-        .filter((task) => Number.isInteger(task.id) && task.id > 0 && task.text),
-      nextId,
-    };
-  }
+  const taskListState = {
+    normalize(stored) {
+      const base = stored && typeof stored === "object" ? stored : {};
+      const tasks = Array.isArray(base.tasks) ? base.tasks : [];
+      const nextId = Number.isInteger(base.nextId) && base.nextId > 0 ? base.nextId : 1;
+      return {
+        tasks: tasks
+          .filter((task) => task && typeof task === "object")
+          .map((task) => ({
+            id: Number(task.id),
+            text: String(task.text || ""),
+            authorId: String(task.authorId || ""),
+            authorKey: String(task.authorKey || ""),
+            authorName: String(task.authorName || "viewer"),
+            status: task.status === "completed" ? "completed" : "active",
+            createdAt: Number(task.createdAt) || Date.now(),
+            completedAt: task.completedAt ? Number(task.completedAt) : null,
+            voteCount: normalizeVoteCount(task.voteCount),
+            votes: this.normalizeVotes(task.votes),
+          }))
+          .filter((task) => Number.isInteger(task.id) && task.id > 0 && task.text),
+        nextId,
+      };
+    },
 
-  function normalizeVotes(votes) {
-    if (!votes || typeof votes !== "object" || Array.isArray(votes)) return {};
-    return Object.fromEntries(
-      Object.entries(votes)
-        .filter(([voterKey]) => voterKey)
-        .map(([voterKey, vote]) => {
-          const value = vote && typeof vote === "object" ? vote : {};
-          return [
-            String(voterKey),
-            {
-              voterName: String(value.voterName || "viewer"),
-              votedAt: Number(value.votedAt) || Date.now(),
-            },
-          ];
-        }),
-    );
-  }
+    normalizeVotes(votes) {
+      if (!votes || typeof votes !== "object" || Array.isArray(votes)) return {};
+      return Object.fromEntries(
+        Object.entries(votes)
+          .filter(([voterKey]) => voterKey)
+          .map(([voterKey, vote]) => {
+            const value = vote && typeof vote === "object" ? vote : {};
+            return [
+              String(voterKey),
+              {
+                voterName: String(value.voterName || "viewer"),
+                votedAt: Number(value.votedAt) || Date.now(),
+              },
+            ];
+          }),
+      );
+    },
 
-  function getActiveTasks(tasks) {
-    return tasks.filter((task) => task.status === "active");
-  }
+    activeTasks(tasks) {
+      return tasks.filter((task) => task.status === "active");
+    },
 
-  function getVoteCount(task) {
-    const voteKeys = Object.keys(task.votes || {});
-    return voteKeys.length || normalizeVoteCount(task.voteCount);
-  }
+    voteCount(task) {
+      const voteKeys = Object.keys(task.votes || {});
+      return voteKeys.length || normalizeVoteCount(task.voteCount);
+    },
 
-  function findVotedTask(tasks, userKey) {
-    return tasks.find((task) => task.status === "active" && task.votes && task.votes[userKey]);
-  }
+    findVotedTask(tasks, userKey) {
+      return tasks.find((task) => task.status === "active" && task.votes && task.votes[userKey]);
+    },
 
-  function cleanupExpiredTasks(storedState, now) {
-    const visibleMs = state.config.completedVisibleSeconds * 1000;
-    const tasks = storedState.tasks.filter((task) => {
-      if (task.status !== "completed") return true;
-      return task.completedAt && now - task.completedAt < visibleMs;
-    });
-    return { ...storedState, tasks };
-  }
+    cleanupExpired(storedState, completedVisibleSeconds, now) {
+      const visibleMs = completedVisibleSeconds * 1000;
+      const tasks = storedState.tasks.filter((task) => {
+        if (task.status !== "completed") return true;
+        return task.completedAt && now - task.completedAt < visibleMs;
+      });
+      return { ...storedState, tasks };
+    },
+
+    orderedTasks(tasks, config) {
+      const byCreatedAt = (a, b) => a.createdAt - b.createdAt || a.id - b.id;
+      if (!config.enableVoting || !config.votePrioritySort) {
+        return [...tasks].sort(byCreatedAt);
+      }
+      return [...tasks].sort((a, b) => {
+        if (a.status !== b.status) return a.status === "active" ? -1 : 1;
+        if (a.status !== "active") return byCreatedAt(a, b);
+        return this.voteCount(b) - this.voteCount(a) || byCreatedAt(a, b);
+      });
+    },
+  };
 
   function sanitizeTaskText(rawText) {
     const text = String(rawText || "")
@@ -708,7 +722,11 @@
       return;
     }
 
-    const stored = cleanupExpiredTasks(await state.storage.get(), Date.now());
+    const stored = taskListState.cleanupExpired(
+      await state.storage.get(),
+      state.config.completedVisibleSeconds,
+      Date.now(),
+    );
     const result = await handler(stored, parsed.args, chatEvent);
     if (result && result.nextState) {
       await state.storage.set(result.nextState);
@@ -730,7 +748,7 @@
     if (!sanitized.ok) return { reason: sanitized.reason };
     if (!userKey) return { reason: "missing_user" };
 
-    const activeTasks = getActiveTasks(stored.tasks);
+    const activeTasks = taskListState.activeTasks(stored.tasks);
     if (activeTasks.length >= state.config.maxTasks) return { reason: "task_limit_full" };
 
     if (!admin) {
@@ -816,7 +834,7 @@
     const target = stored.tasks.find((task) => task.id === id);
     if (!target || target.status !== "active") return { reason: "task_not_active" };
 
-    const votedTask = findVotedTask(stored.tasks, userKey);
+    const votedTask = taskListState.findVotedTask(stored.tasks, userKey);
     if (votedTask && votedTask.id === id) return { reason: "duplicate_vote" };
     if (votedTask && state.config.voteDuplicateBehavior === "ignore") return { reason: "duplicate_vote" };
 
@@ -851,7 +869,7 @@
     );
     state.cleanupTimer = setTimeout(async () => {
       const current = await state.storage.get();
-      const cleaned = cleanupExpiredTasks(current, Date.now());
+      const cleaned = taskListState.cleanupExpired(current, state.config.completedVisibleSeconds, Date.now());
       if (cleaned.tasks.length !== current.tasks.length) {
         await state.storage.set(cleaned);
       }
@@ -903,9 +921,9 @@
     const empty = document.getElementById("todo-empty");
     if (!widget || !title || !counter || !list || !empty) return;
 
-    const orderedTasks = getOrderedTasks(stored.tasks);
+    const orderedTasks = taskListState.orderedTasks(stored.tasks, state.config);
     const previousStatuses = new Map(state.renderedTaskStatuses);
-    const activeCount = getActiveTasks(stored.tasks).length;
+    const activeCount = taskListState.activeTasks(stored.tasks).length;
     const counterLabel = activeCount === 1 ? state.config.taskLabelSingular : state.config.taskLabelPlural;
     widget.classList.toggle("has-tasks", orderedTasks.length > 0);
     renderTitle(title);
@@ -1017,18 +1035,6 @@
     }, 120);
   }
 
-  function getOrderedTasks(tasks) {
-    const byCreatedAt = (a, b) => a.createdAt - b.createdAt || a.id - b.id;
-    if (!state.config.enableVoting || !state.config.votePrioritySort) {
-      return [...tasks].sort(byCreatedAt);
-    }
-    return [...tasks].sort((a, b) => {
-      if (a.status !== b.status) return a.status === "active" ? -1 : 1;
-      if (a.status !== "active") return byCreatedAt(a, b);
-      return getVoteCount(b) - getVoteCount(a) || byCreatedAt(a, b);
-    });
-  }
-
   function createTaskElement(task, previousStatuses) {
     const item = document.createElement("li");
     item.className = "todo-widget__item";
@@ -1062,7 +1068,7 @@
     if (state.config.enableVoting) {
       const votes = document.createElement("div");
       votes.className = "todo-widget__votes";
-      const voteCount = getVoteCount(task);
+      const voteCount = taskListState.voteCount(task);
       votes.textContent = `${voteCount} ${voteCount === 1 ? "vote" : "votes"}`;
       meta.append(votes);
     }
@@ -1089,7 +1095,9 @@
     state.renderState = overlayState;
     applyAppearance();
     loadGoogleFont(state.config.fontFamily);
-    const stored = overlayState || cleanupExpiredTasks(await state.storage.get(), Date.now());
+    const stored =
+      overlayState ||
+      taskListState.cleanupExpired(await state.storage.get(), state.config.completedVisibleSeconds, Date.now());
     if (!overlayState) await state.storage.set(stored);
     render(stored);
     if (!overlayState) scheduleCleanup(stored);
@@ -1172,7 +1180,7 @@
       return platformAdapter.buildSnapshot(state.config, await state.storage.get());
     },
     async getState() {
-      if (state.renderState) return normalizeStoredState(state.renderState);
+      if (state.renderState) return taskListState.normalize(state.renderState);
       if (!state.storage) state.storage = createStorageAdapter();
       return state.storage.get();
     },
