@@ -632,16 +632,16 @@
     },
   };
 
-  function sanitizeTaskText(rawText) {
+  function sanitizeTaskText(rawText, config = state.config) {
     const text = String(rawText || "")
       .replace(/[\u0000-\u001f\u007f]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
     if (!text) return { ok: false, reason: "empty" };
-    if (text.length > state.config.maxTaskLength) return { ok: false, reason: "too_long" };
+    if (text.length > config.maxTaskLength) return { ok: false, reason: "too_long" };
     if (hasUrl(text)) return { ok: false, reason: "contains_url" };
     const lower = text.toLowerCase();
-    const blocked = splitCsv(state.config.blacklistWords).find((word) => lower.includes(word.toLowerCase()));
+    const blocked = splitCsv(config.blacklistWords).find((word) => lower.includes(word.toLowerCase()));
     if (blocked) return { ok: false, reason: "blacklisted", blocked };
     return { ok: true, text };
   }
@@ -725,20 +725,20 @@
     return values.some((value) => expected.has(normalizeName(value)));
   }
 
-  function isModerator(user) {
-    const fallbackMods = splitCsv(state.config.moderatorNames).map(normalizeName);
+  function isModerator(user, config = state.config) {
+    const fallbackMods = splitCsv(config.moderatorNames).map(normalizeName);
     const username = normalizeName(user.username || user.displayName);
     return fallbackMods.includes(username) || hasBadgeOrRole(user, ["moderator", "mod"]);
   }
 
-  function isStreamer(user) {
+  function isStreamer(user, config = state.config) {
     const username = normalizeName(user.username || user.displayName);
-    const configured = normalizeName(state.config.streamerName);
+    const configured = normalizeName(config.streamerName);
     return Boolean(configured && username === configured) || hasBadgeOrRole(user, ["broadcaster", "streamer"]);
   }
 
-  function isAdmin(user) {
-    return isStreamer(user) || isModerator(user);
+  function isAdmin(user, config = state.config) {
+    return isStreamer(user, config) || isModerator(user, config);
   }
 
   function parseCommand(message) {
@@ -972,6 +972,189 @@
       return writeDashboardTaskChange("reset", () => taskListState.resetTasks());
     },
   };
+
+  function createHostedChatCommandHandler(options) {
+    const source = options && typeof options === "object" ? options : {};
+    const overlayState = platformAdapter.isOverlayConfig(source.overlayState) ? source.overlayState : null;
+    const commandConfig = source.commandConfig && typeof source.commandConfig === "object" ? source.commandConfig : {};
+    const configSource = overlayState ? { ...platformAdapter.toFieldData(overlayState), ...commandConfig } : commandConfig;
+    const config = buildConfig(configSource);
+    const widgets = overlayState && Array.isArray(overlayState.widgets) ? overlayState.widgets : [];
+    const activeTaskWidgets = widgets.filter((widget) => widget && widget.type === TODO_WIDGET_TYPE && widget.enabled !== false);
+    const inactiveTaskWidgets = widgets.filter((widget) => widget && widget.type === TODO_WIDGET_TYPE && widget.enabled === false);
+    const handlerState = {
+      stored: taskListState.normalize(source.storedState || (overlayState ? platformAdapter.toStoredState(overlayState) : null)),
+      globalCooldownUntil: 0,
+      userCooldowns: new Map(),
+      voteCooldowns: new Map(),
+    };
+
+    function buildResult(result) {
+      const nextResult = result || { reason: "unknown_command" };
+      if (nextResult.nextState) {
+        handlerState.stored = taskListState.normalize(nextResult.nextState);
+      }
+      return {
+        ...nextResult,
+        state: taskListState.normalize(handlerState.stored),
+        overlayState: platformAdapter.buildSnapshot(config, handlerState.stored),
+      };
+    }
+
+    function resolveCommand(parsed) {
+      const commandHandlers = [
+        { command: config.addCommand, handler: addHostedTask },
+        { command: config.doneCommand, handler: completeHostedTask },
+        { command: config.deleteCommand, handler: removeHostedTask },
+        { command: config.resetCommand, handler: resetHostedTasks },
+        { command: config.voteCommand, handler: voteHostedTask },
+      ];
+      const matches = commandHandlers.filter((entry) => entry.command === parsed.command);
+      if (!matches.length) return { reason: "unknown_command" };
+      if (!activeTaskWidgets.length && inactiveTaskWidgets.length) return { reason: "inactive_widget" };
+      if (!activeTaskWidgets.length) return { reason: "no_active_widget" };
+      if (activeTaskWidgets.length > 1) return { reason: "command_conflict" };
+      return { handler: matches[0].handler };
+    }
+
+    function addHostedTask(stored, taskText, user) {
+      const admin = isAdmin(user, config);
+      const now = Date.now();
+      const userKey = getUserKey(user);
+      const sanitized = sanitizeTaskText(taskText, config);
+      if (!sanitized.ok) return { reason: sanitized.reason };
+      if (!userKey) return { reason: "missing_user" };
+
+      const activeTasks = taskListState.activeTasks(stored.tasks);
+      if (activeTasks.length >= config.maxTasks) return { reason: "task_limit_full" };
+
+      if (!admin) {
+        if (now < handlerState.globalCooldownUntil) return { reason: "global_cooldown" };
+        const userCooldownUntil = handlerState.userCooldowns.get(userKey) || 0;
+        if (now < userCooldownUntil) return { reason: "user_cooldown" };
+        const userActiveCount = activeTasks.filter((task) => task.authorKey === userKey).length;
+        if (userActiveCount >= config.perUserTaskLimit) return { reason: "per_user_limit" };
+        handlerState.globalCooldownUntil = now + config.globalCooldownSeconds * 1000;
+        handlerState.userCooldowns.set(userKey, now + config.userCooldownSeconds * 1000);
+      }
+
+      return {
+        nextState: {
+          tasks: [
+            ...stored.tasks,
+            {
+              id: stored.nextId,
+              text: sanitized.text,
+              authorId: user.authorId,
+              authorKey: userKey,
+              authorName: user.displayName || user.username || "viewer",
+              status: "active",
+              source: "chat-command",
+              createdAt: now,
+              completedAt: null,
+              votes: {},
+            },
+          ],
+          nextId: stored.nextId + 1,
+        },
+      };
+    }
+
+    function completeHostedTask(stored, idText, user) {
+      const id = Number(idText);
+      if (!Number.isInteger(id)) return { reason: "invalid_id" };
+      const userKey = getUserKey(user);
+      const admin = isAdmin(user, config);
+      let changed = false;
+      const now = Date.now();
+      const tasks = stored.tasks.map((task) => {
+        if (task.id !== id) return task;
+        if (task.status === "completed") return task;
+        if (!admin && (!userKey || task.authorKey !== userKey)) return task;
+        changed = true;
+        return { ...task, status: "completed", completedAt: now };
+      });
+      return changed ? { nextState: { ...stored, tasks } } : { reason: "not_found_or_not_allowed" };
+    }
+
+    function removeHostedTask(stored, idText, user) {
+      const id = Number(idText);
+      if (!Number.isInteger(id)) return { reason: "invalid_id" };
+      const userKey = getUserKey(user);
+      const admin = isAdmin(user, config);
+      const tasks = stored.tasks.filter((task) => {
+        if (task.id !== id) return true;
+        return !admin && (!userKey || task.authorKey !== userKey);
+      });
+      return tasks.length === stored.tasks.length
+        ? { reason: "not_found_or_not_allowed" }
+        : { nextState: { ...stored, tasks } };
+    }
+
+    function resetHostedTasks(stored, idText, user) {
+      if (!isAdmin(user, config)) return { reason: "not_admin" };
+      return taskListState.resetTasks();
+    }
+
+    function voteHostedTask(stored, idText, user) {
+      if (!config.enableVoting) return { reason: "voting_disabled" };
+      if (!String(idText || "").trim()) return { reason: "missing_task_number" };
+      const id = Number(idText);
+      if (!Number.isInteger(id)) return { reason: "invalid_id" };
+      const userKey = getUserKey(user);
+      if (!userKey) return { reason: "missing_user" };
+
+      const now = Date.now();
+      const voteCooldownUntil = handlerState.voteCooldowns.get(userKey) || 0;
+      if (now < voteCooldownUntil) return { reason: "vote_cooldown" };
+
+      const target = stored.tasks.find((task) => task.id === id);
+      if (!target || target.status !== "active") return { reason: "task_not_active" };
+
+      const votedTask = taskListState.findVotedTask(stored.tasks, userKey);
+      if (votedTask && votedTask.id === id) return { reason: "duplicate_vote" };
+      if (votedTask && config.voteDuplicateBehavior === "ignore") return { reason: "duplicate_vote" };
+
+      const tasks = stored.tasks.map((task) => {
+        const votes = { ...(task.votes || {}) };
+        if (config.voteDuplicateBehavior === "change" && votes[userKey]) {
+          delete votes[userKey];
+        }
+        if (task.id === id) {
+          votes[userKey] = {
+            voterName: user.displayName || user.username || "viewer",
+            votedAt: now,
+          };
+        }
+        return { ...task, votes };
+      });
+
+      handlerState.voteCooldowns.set(userKey, now + config.voteCooldownSeconds * 1000);
+      return { nextState: { ...stored, tasks } };
+    }
+
+    return {
+      getConfig() {
+        return { ...config };
+      },
+
+      getState() {
+        return taskListState.normalize(handlerState.stored);
+      },
+
+      getOverlayState() {
+        return platformAdapter.buildSnapshot(config, handlerState.stored);
+      },
+
+      async handle(chatEvent) {
+        const parsed = parseCommand(chatEvent && chatEvent.message);
+        if (!parsed) return buildResult({ reason: "empty_command" });
+        const resolution = resolveCommand(parsed);
+        if (resolution.reason) return buildResult({ reason: resolution.reason });
+        return buildResult(await resolution.handler(handlerState.stored, parsed.args, chatEvent));
+      },
+    };
+  }
 
   function scheduleCleanup(stored) {
     clearTimeout(state.cleanupTimer);
@@ -1286,6 +1469,7 @@
     enqueueCommand,
     extractChatEvent,
     dashboard: dashboardTaskManager,
+    createHostedChatCommandHandler,
     setPreviewLog(element) {
       state.previewLog = element;
     },

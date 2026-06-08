@@ -61,6 +61,7 @@ run_page ".scratch/twitch-todo-widget-market-roadmap/voting-smoke.html" "voting 
 run_page ".scratch/twitch-todo-widget-market-roadmap/chat-event-smoke.html" "chat event payloads"
 run_page ".scratch/twitch-todo-widget-market-roadmap/platform-snapshot-smoke.html" "platform snapshot contract"
 run_page ".scratch/twitch-todo-widget-market-roadmap/hosted-overlay-smoke.html" "hosted overlay route"
+run_page ".scratch/twitch-todo-widget-market-roadmap/hosted-chat-command-smoke.html" "hosted chat command boundary"
 run_page ".scratch/twitch-todo-widget-market-roadmap/preview-smoke.html" "local preview controls and commands"
 
 printf "ok - smoke test suite\n"

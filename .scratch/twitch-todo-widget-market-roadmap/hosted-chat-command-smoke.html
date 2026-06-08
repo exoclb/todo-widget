@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Hosted Chat Command Smoke</title>
+    <style>
+      pre {
+        position: fixed;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 8px;
+        background: #ffffff;
+        color: #111111;
+      }
+    </style>
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <pre id="result">RUNNING</pre>
+    <script src="../../widget.js"></script>
+    <script>
+      const result = document.getElementById("result");
+
+      function assert(condition, message) {
+        if (!condition) throw new Error(message);
+      }
+
+      function getTodoWidget(snapshot) {
+        return snapshot.widgets.find((widget) => widget.type === "todo");
+      }
+
+      function viewer(name, id) {
+        return {
+          message: "",
+          displayName: name,
+          username: name.toLowerCase(),
+          authorId: id,
+          badges: [],
+          roles: [],
+        };
+      }
+
+      function streamer(message) {
+        return {
+          message,
+          displayName: "Streamer",
+          username: "streamer",
+          authorId: "streamer-id",
+          badges: [{ type: "broadcaster" }],
+          roles: ["streamer"],
+        };
+      }
+
+      (async () => {
+        try {
+          const overlayState = {
+            schemaVersion: 1,
+            profile: {
+              slug: "hosted-chat",
+              displayName: "Hosted Chat",
+            },
+            overlay: {
+              refreshIntervalMs: 5000,
+            },
+            summary: {},
+            theme: {
+              tokens: {
+                themePreset: "material-light",
+              },
+            },
+            widgets: [
+              {
+                id: "todo-main",
+                type: "todo",
+                title: "HOSTED CHAT TASKS",
+                enabled: true,
+                settings: {
+                  emptyText: "No hosted chat tasks",
+                  maxItems: 2,
+                  enableVoting: true,
+                  votePrioritySort: true,
+                  layoutMode: "compact",
+                },
+                data: {
+                  todos: [],
+                },
+              },
+            ],
+          };
+
+          const handler = window.TwitchTodoWidget.createHostedChatCommandHandler({
+            overlayState,
+            commandConfig: {
+              streamerName: "streamer",
+              globalCooldownSeconds: 0,
+              userCooldownSeconds: 0,
+              perUserTaskLimit: 1,
+              enableVoting: true,
+              voteCooldownSeconds: 0,
+            },
+          });
+
+          const viewerOne = viewer("ViewerOne", "viewer-one");
+          let resultOne = await handler.handle({ ...viewerOne, message: "!task Hosted chat task one" });
+          assert(resultOne.nextState, "Hosted Chat Command Handler did not create a task");
+          assert(resultOne.state.tasks[0].source === "chat-command", "Hosted chat task source missing");
+          assert(resultOne.state.tasks[0].authorKey === "viewer-one", "Hosted chat task owner missing");
+          assert(
+            getTodoWidget(resultOne.overlayState).data.todos[0].title === "Hosted chat task one",
+            "Hosted chat write did not reach Overlay State",
+          );
+
+          const ownerLimit = await handler.handle({ ...viewerOne, message: "!task Second task from same owner" });
+          assert(ownerLimit.reason === "per_user_limit", "Task Owner Capacity was not enforced");
+
+          const voteResult = await handler.handle({
+            ...viewer("ViewerTwo", "viewer-two"),
+            message: "!vote 1",
+          });
+          assert(voteResult.nextState, "Hosted vote did not update Task List State");
+          assert(getTodoWidget(voteResult.overlayState).data.todos[0].voteCount === 1, "Hosted vote count missing");
+
+          const completeResult = await handler.handle(streamer("!done 1"));
+          assert(completeResult.nextState, "Hosted streamer complete did not update Task List State");
+          assert(getTodoWidget(completeResult.overlayState).data.todos[0].isDone === true, "Hosted complete missing");
+
+          const inactiveHandler = window.TwitchTodoWidget.createHostedChatCommandHandler({
+            overlayState: {
+              ...overlayState,
+              widgets: [{ ...overlayState.widgets[0], enabled: false }],
+            },
+          });
+          const inactiveResult = await inactiveHandler.handle({ ...viewerOne, message: "!task Ignored inactive task" });
+          assert(inactiveResult.reason === "inactive_widget", "Inactive widget command was not ignored");
+          assert(inactiveResult.state.tasks.length === 0, "Inactive widget command changed Task List State");
+
+          const conflictHandler = window.TwitchTodoWidget.createHostedChatCommandHandler({
+            overlayState: {
+              ...overlayState,
+              widgets: [
+                { ...overlayState.widgets[0], id: "todo-main" },
+                { ...overlayState.widgets[0], id: "todo-second" },
+              ],
+            },
+          });
+          const conflictResult = await conflictHandler.handle({ ...viewerOne, message: "!task Ambiguous task" });
+          assert(conflictResult.reason === "command_conflict", "Command Conflict was not detected");
+
+          const unknownResult = await handler.handle({ ...viewerOne, message: "!unknown ignored" });
+          assert(unknownResult.reason === "unknown_command", "Unknown command should be ignored silently");
+
+          result.textContent = "PASS";
+        } catch (error) {
+          result.textContent = `FAIL: ${error.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>
