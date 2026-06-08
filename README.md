@@ -2,7 +2,7 @@
 
 A StreamElements custom widget for Twitch streamers. Viewers can add tasks from chat, Task Owners can complete or remove their own tasks, and Task Managers can manage the list with override commands.
 
-Built for live streams that need a lightweight task, quest, mission, or challenge overlay driven by Twitch chat. The widget is copy-paste friendly for StreamElements and includes local preview plus smoke tests for safer setup.
+Built for live streams that need a lightweight task, quest, mission, or challenge overlay driven by Twitch chat. The widget is copy-paste friendly for StreamElements and includes local preview, streamer dashboard controls, Hosted Overlay MVP primitives, and smoke tests for safer setup.
 
 ![Twitch Todo Widget visual presets and layout modes](docs/assets/theme-gallery-2026.png)
 
@@ -20,13 +20,17 @@ Built for live streams that need a lightweight task, quest, mission, or challeng
 - Custom panel, frame, and task icon images with opacity and fit controls.
 - Animation controls for new and completed tasks, with reduced-motion support.
 - StreamElements storage persistence with localStorage fallback for local preview.
+- Local streamer dashboard controls in `preview.html` for adding, editing, completing, removing, and resetting tasks through Task List State.
+- Hosted Overlay MVP render path in `hosted-overlay.html` that reads one complete Overlay State and stays read-only.
+- Hosted Chat Command Handler boundary for future platform use, separate from Hosted Overlay rendering.
 
 ## Known Limitations
 
 - Twitch Channel Points integration is not implemented.
-- There is no external dashboard or database; live control happens through Chat Commands.
+- StreamElements Install remains copy-paste based. The hosted web platform, account system, database, and production dashboard routes are not included in this static widget repo.
 - The widget does not send chat replies. Successes and Ignored Commands are silent by design.
-- Task editing after creation is not implemented.
+- Task Text Editing exists in local streamer dashboard controls and hosted-platform primitives, but not as a StreamElements chat command.
+- Hosted Overlay MVP renders saved Overlay State at initialization time. Polling, realtime refresh, and regenerated Overlay Link lifecycle are planned future platform work.
 - Screenshot/demo media should be reviewed by a human before marketplace-style publishing.
 
 ## Planned Future Ideas
@@ -35,6 +39,8 @@ Built for live streams that need a lightweight task, quest, mission, or challeng
 - Optional approval queue before Tasks become Active Tasks.
 - More theme packs and marketplace-ready image presets.
 - Deeper visual regression coverage.
+- Production hosted dashboard routes, backend persistence, auth, and Overlay Link lifecycle management.
+- Realtime Hosted Overlay refresh after dashboard or chat command updates.
 
 ## Files
 
@@ -43,6 +49,7 @@ Built for live streams that need a lightweight task, quest, mission, or challeng
 - `widget.js` goes in the JS tab.
 - `widget.json` goes in the Fields tab.
 - `preview.html` is only for local testing.
+- `hosted-overlay.html` is the static Hosted Overlay MVP shell for platform development, not a StreamElements tab.
 
 ## Local Preview
 
@@ -58,7 +65,7 @@ Open:
 http://localhost:8000/preview.html
 ```
 
-The preview includes a mock username, role selector, command input, quick action buttons, and debug log.
+The preview includes a mock username, role selector, command input, streamer dashboard controls, quick action buttons, and debug log.
 It also includes controls for Theme Presets, Quest Mode wording, Layout Modes, animations, panel images, frame images, and task icons.
 The Platform snapshot panel shows the read-only Overlay State produced from the current fields and persisted task state.
 Use it to inspect the future hosted-platform contract without changing StreamElements behavior.
@@ -71,7 +78,7 @@ Run the lightweight smoke suite from this folder:
 bash scripts/smoke-test.sh
 ```
 
-The command validates `widget.json`, starts a temporary local preview server, and runs browser smoke checks for theme wording, animations, layout modes, custom images, preview controls, and the Platform snapshot contract. Browser checks require Chromium or Google Chrome on your machine; if neither is available, the command still validates the widget field JSON and skips browser checks.
+The command validates `widget.json`, starts a temporary local preview server, and runs browser smoke checks for theme wording, animations, layout modes, custom images, chat payloads, Platform snapshot contract, Hosted Overlay route, hosted Chat Command Handler boundary, and local preview controls. Browser checks require Chromium or Google Chrome on your machine; if neither is available, the command still validates the widget field JSON and skips browser checks.
 
 ## Default Commands
 
@@ -186,6 +193,18 @@ For a beginner-friendly walkthrough, see [Twitch Todo Widget Setup Guide](docs/S
 5. Add fallback streamer and moderator names if badge detection is not available in your test environment.
 6. Test with local preview first, then test inside StreamElements while `debugMode` is enabled.
 7. Turn `debugMode` off for production.
+
+## Hosted Platform MVP Notes
+
+This repo now contains static primitives for the future Widget Platform, while the production hosted platform itself remains future work.
+
+- Overlay State is the public-read contract for a Streamer Profile.
+- `hosted-overlay.html` renders one complete saved Overlay State and only shows Active Widgets.
+- Inactive Overlay Links render an empty transparent shell and must not expose Overlay State or streamer-specific data.
+- Hosted Overlay is read-only. Dashboard writes and Chat Command Handler writes happen outside the public render route.
+- `window.TwitchTodoWidget.dashboard` provides the first local dashboard write path for Task List State.
+- `window.TwitchTodoWidget.createHostedChatCommandHandler()` provides the hosted chat command boundary for future backend/platform wiring.
+- `widgets[].data.todos` is render input, not the write model. Dashboard/chat writes should update Task List State first, then derive Overlay State.
 
 ## StreamElements Troubleshooting
 
