@@ -2,7 +2,7 @@
 
 A StreamElements custom widget for Twitch streamers. Viewers can add tasks from chat, Task Owners can complete or remove their own tasks, and Task Managers can manage the list with override commands.
 
-Built for live streams that need a lightweight task, quest, mission, or challenge overlay driven by Twitch chat. The widget is copy-paste friendly for StreamElements and includes local preview, streamer dashboard controls, Hosted Overlay MVP primitives, and smoke tests for safer setup.
+Built for live streams that need a lightweight task, quest, mission, or challenge overlay driven by Twitch chat. The widget is copy-paste friendly for StreamElements and includes local preview, streamer dashboard controls, Hosted Overlay MVP primitives, a first hosted dashboard bootstrap, and smoke tests for safer setup.
 
 ![Twitch Todo Widget visual presets and layout modes](docs/assets/theme-gallery-2026.png)
 
@@ -39,7 +39,7 @@ Built for live streams that need a lightweight task, quest, mission, or challeng
 - Optional approval queue before Tasks become Active Tasks.
 - More theme packs and marketplace-ready image presets.
 - Deeper visual regression coverage.
-- Production hosted dashboard routes, backend persistence, auth, and Overlay Link lifecycle management.
+- Production Task Widget persistence, Overlay Link lifecycle management, and realtime refresh.
 - Realtime Hosted Overlay refresh after dashboard or chat command updates.
 
 ## Files
@@ -50,6 +50,7 @@ Built for live streams that need a lightweight task, quest, mission, or challeng
 - `widget.json` goes in the Fields tab.
 - `preview.html` is only for local testing.
 - `hosted-overlay.html` is the static Hosted Overlay MVP shell for platform development, not a StreamElements tab.
+- `app/`, `lib/`, `middleware.ts`, and `supabase/` contain the first Next.js/Supabase hosted platform bootstrap.
 
 ## Local Preview
 
@@ -196,12 +197,15 @@ For a beginner-friendly walkthrough, see [Twitch Todo Widget Setup Guide](docs/S
 
 ## Hosted Platform MVP Notes
 
-This repo now contains static primitives for the future Widget Platform, while the production hosted platform itself remains future work.
+This repo now contains static primitives for the future Widget Platform plus the first production hosted platform bootstrap.
 
 - Overlay State is the public-read contract for a Streamer Profile.
 - `hosted-overlay.html` renders one complete saved Overlay State and only shows Active Widgets.
 - Inactive Overlay Links render an empty transparent shell and must not expose Overlay State or streamer-specific data.
 - Hosted Overlay is read-only. Dashboard writes and Chat Command Handler writes happen outside the public render route.
+- The hosted dashboard uses Next.js with Supabase Auth and owner-scoped `streamer_profiles` rows.
+- Apply `supabase/migrations/20260609030000_create_streamer_profiles.sql` before using `/dashboard` against a Supabase project.
+- Set `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; see `.env.example`.
 - `window.TwitchTodoWidget.dashboard` provides the first local dashboard write path for Task List State.
 - `window.TwitchTodoWidget.createHostedChatCommandHandler()` provides the hosted chat command boundary for future backend/platform wiring.
 - `widgets[].data.todos` is render input, not the write model. Dashboard/chat writes should update Task List State first, then derive Overlay State.
