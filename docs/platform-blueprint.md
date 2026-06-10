@@ -16,6 +16,9 @@ For this project, SSG means single source governance:
 - Future dashboard data should use the same platform snapshot shape.
 - Overlay rendering should read from the snapshot shape instead of inventing a
   separate data contract.
+- `docs/marketplace-gallery.html` is the source for README/marketplace preview
+  composition. `docs/assets/theme-gallery-2026.png` is a generated artifact and
+  should be regenerated with `bun run docs:gallery` after changing gallery content.
 
 ## Platform Snapshot Shape
 

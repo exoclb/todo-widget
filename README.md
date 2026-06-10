@@ -71,6 +71,19 @@ It also includes controls for Theme Presets, Quest Mode wording, Layout Modes, a
 The Platform snapshot panel shows the read-only Overlay State produced from the current fields and persisted task state.
 Use it to inspect the future hosted-platform contract without changing StreamElements behavior.
 
+## Marketplace Preview
+
+The README preview image is generated from the static gallery page at `docs/marketplace-gallery.html`.
+Treat that HTML page as the source of truth for marketplace-style demo composition, sample tasks, labels, badges, and theme/layout examples.
+
+Regenerate the PNG after changing the gallery:
+
+```sh
+bun run docs:gallery
+```
+
+The generated asset is written to `docs/assets/theme-gallery-2026.png`.
+
 ## Smoke Test
 
 Run the lightweight smoke suite from this folder:
