@@ -213,7 +213,7 @@ Dashboard access uses Supabase Auth and Row Level Security:
 Hosted Overlay access uses a public Next.js route:
 
 - The route receives an Overlay Link token.
-- The server resolves the token against active `overlay_links`.
+- The server hashes the token and resolves it against active `overlay_links`.
 - The server returns only `overlay_states.state` for the linked Streamer Profile.
 - Unknown or inactive links return an empty or disabled overlay shell with no
   streamer-specific data.

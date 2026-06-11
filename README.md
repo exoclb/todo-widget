@@ -217,6 +217,7 @@ This repo now contains static primitives for the future Widget Platform plus the
 - Inactive Overlay Links render an empty transparent shell and must not expose Overlay State or streamer-specific data.
 - Hosted Overlay is read-only. Dashboard writes and Chat Command Handler writes happen outside the public render route.
 - The hosted dashboard uses Next.js with Supabase Auth and owner-scoped `streamer_profiles` rows.
+- `resolveOverlayStateForToken()` hashes public Overlay Link tokens, resolves active links, and returns only derived public Overlay State.
 - Apply `supabase/migrations/20260609030000_create_streamer_profiles.sql` before using `/dashboard` against a Supabase project.
 - Apply `supabase/migrations/20260611080000_create_overlay_links_and_states.sql` before adding hosted Overlay Link routes or saved Overlay State projection.
 - Set `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; see `.env.example`.
