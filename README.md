@@ -222,6 +222,7 @@ This repo now contains static primitives for the future Widget Platform plus the
 - Apply `supabase/migrations/20260609030000_create_streamer_profiles.sql` before using `/dashboard` against a Supabase project.
 - Apply `supabase/migrations/20260611080000_create_overlay_links_and_states.sql` before adding hosted Overlay Link routes or saved Overlay State projection.
 - Set `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and server-only `SUPABASE_SERVICE_ROLE_KEY`; see `.env.example`.
+- Generate dev SQL for a sample Overlay Link and saved Overlay State with `bun run dev:overlay-seed -- --owner-user-id <auth-user-uuid>`.
 - `window.TwitchTodoWidget.dashboard` provides the first local dashboard write path for Task List State.
 - `window.TwitchTodoWidget.createHostedChatCommandHandler()` provides the hosted chat command boundary for future backend/platform wiring.
 - `widgets[].data.todos` is render input, not the write model. Dashboard/chat writes should update Task List State first, then derive Overlay State.

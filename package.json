@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "dev:overlay-seed": "bun scripts/create-overlay-dev-seed.mjs",
     "docs:gallery": "sh scripts/render-marketplace-gallery.sh",
     "test": "bun test tests",
     "smoke": "bash scripts/smoke-test.sh"
