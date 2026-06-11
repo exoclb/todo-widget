@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { requireEnv } from "@/lib/env";
 
@@ -34,6 +35,20 @@ export async function createSupabaseWritableServerClient() {
             cookieStore.set(name, value, options);
           });
         }
+      }
+    }
+  );
+}
+
+export function createSupabaseServiceRoleClient() {
+  return createClient(
+    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false
       }
     }
   );

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  createOverlayRoutePayload,
   hashOverlayLinkToken,
   normalizeOverlayLinkToken,
   resolveOverlayStateForToken,
@@ -74,6 +75,33 @@ describe("Overlay Link resolution", () => {
       derivedAt: "2026-06-11T00:00:00.000Z",
     });
     assert.deepEqual(repository.calls[0], ["findActiveOverlayLinkByTokenHash", publicTokenHash]);
+  });
+
+  it("builds public route payloads without exposing resolver metadata", () => {
+    const state = {
+      schemaVersion: 1,
+      profile: { slug: "demo", displayName: "Demo" },
+      widgets: [],
+    };
+
+    assert.deepEqual(
+      createOverlayRoutePayload({
+        linkId: "link-1",
+        streamerProfileId: "profile-1",
+        schemaVersion: 1,
+        state,
+        derivedFromTaskListVersion: 7,
+        derivedAt: "2026-06-11T00:00:00.000Z",
+      }),
+      {
+        status: "active",
+        state,
+      },
+    );
+    assert.deepEqual(createOverlayRoutePayload(null), {
+      status: "inactive",
+      state: null,
+    });
   });
 
   it("does not expose state for blank, unknown, or inactive Overlay Links", async () => {

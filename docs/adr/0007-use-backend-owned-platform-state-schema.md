@@ -215,6 +215,8 @@ Hosted Overlay access uses a public Next.js route:
 - The route receives an Overlay Link token.
 - The server hashes the token and resolves it against active `overlay_links`.
 - The server returns only `overlay_states.state` for the linked Streamer Profile.
+  Resolver metadata such as link IDs, profile IDs, and task list versions remain
+  server-side.
 - Unknown or inactive links return an empty or disabled overlay shell with no
   streamer-specific data.
 
