@@ -218,13 +218,16 @@ This repo now contains static primitives for the future Widget Platform plus the
 - Hosted Overlay is read-only. Dashboard writes and Chat Command Handler writes happen outside the public render route.
 - The hosted dashboard uses Next.js with Supabase Auth and owner-scoped `streamer_profiles` rows.
 - `resolveOverlayStateForToken()` hashes public Overlay Link tokens, resolves active links, and returns only derived public Overlay State.
-- `GET /overlay/[token]` returns `{ status: "active", state }` for active links and `{ status: "inactive", state: null }` otherwise.
+- `GET /overlay/[token]` renders Hosted Overlay HTML for browser/OBS requests and returns `{ status: "active", state }` for `Accept: application/json` clients.
+- `POST /api/hosted-chat-command` is the server-to-server Hosted Chat Command ingress. It requires `Authorization: Bearer $HOSTED_CHAT_COMMAND_API_TOKEN`, validates chat command payloads, loads active widget command settings on the backend, writes Task List State, logs accepted/ignored outcomes, and derives Overlay State.
 - Apply `supabase/migrations/20260609030000_create_streamer_profiles.sql` before using `/dashboard` against a Supabase project.
 - Apply `supabase/migrations/20260611080000_create_overlay_links_and_states.sql` before adding hosted Overlay Link routes or saved Overlay State projection.
-- Set `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and server-only `SUPABASE_SERVICE_ROLE_KEY`; see `.env.example`.
+- Apply `supabase/migrations/20260612090000_create_task_list_state.sql` before using hosted dashboard task writes or hosted chat command writes.
+- Set `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, server-only `SUPABASE_SERVICE_ROLE_KEY`, and server-to-server `HOSTED_CHAT_COMMAND_API_TOKEN`; see `.env.example`.
 - Generate dev SQL for a sample Overlay Link and saved Overlay State with `bun run dev:overlay-seed -- --owner-user-id <auth-user-uuid>`.
 - `window.TwitchTodoWidget.dashboard` provides the first local dashboard write path for Task List State.
 - `window.TwitchTodoWidget.createHostedChatCommandHandler()` provides the hosted chat command boundary for future backend/platform wiring.
+- Hosted dashboard writes and hosted chat command writes use the backend-owned Task List State module. Voting Mode stores private Task Vote records and exposes only derived `voteCount` in Overlay State.
 - `widgets[].data.todos` is render input, not the write model. Dashboard/chat writes should update Task List State first, then derive Overlay State.
 
 ## StreamElements Troubleshooting

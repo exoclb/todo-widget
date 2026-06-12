@@ -1,9 +1,41 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseStreamerProfileRepository } from "@/lib/platform/supabase-profile-repository";
-import { updateOwnedStreamerProfile } from "@/lib/platform/streamer-profile.js";
+import { createSupabaseTaskListRepository } from "@/lib/platform/supabase-task-list-repository";
+import {
+  addDashboardTask,
+  completeDashboardTask,
+  editDashboardTaskText,
+  removeDashboardTask,
+  resetDashboardTaskList
+} from "@/lib/platform/task-list-state.js";
+import { loadOwnedStreamerProfile, updateOwnedStreamerProfile } from "@/lib/platform/streamer-profile.js";
+
+async function requireOwnedDashboardContext(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  const profileId = String(formData.get("profileId") ?? "");
+  const profileRepository = createSupabaseStreamerProfileRepository(supabase);
+  const profile = await loadOwnedStreamerProfile(profileRepository, user, profileId);
+  const taskRepository = createSupabaseTaskListRepository(supabase);
+  const widget = await taskRepository.ensureDefaultTaskWidgetForProfile(profile.id);
+
+  return {
+    profile,
+    taskRepository,
+    widget
+  };
+}
 
 export async function updateStreamerProfile(formData: FormData) {
   const supabase = await createSupabaseServerClient();
@@ -26,4 +58,73 @@ export async function updateStreamerProfile(formData: FormData) {
   });
 
   redirect("/dashboard");
+}
+
+export async function addTaskFromDashboard(formData: FormData) {
+  const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
+
+  await addDashboardTask(taskRepository, {
+    streamerProfileId: profile.id,
+    widgetId: widget.id,
+    taskText: String(formData.get("taskText") ?? ""),
+    streamerDisplayName: profile.displayName
+  });
+
+  revalidatePath(`/dashboard/${profile.id}`);
+  redirect(`/dashboard/${profile.id}`);
+}
+
+export async function editTaskFromDashboard(formData: FormData) {
+  const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
+
+  await editDashboardTaskText(taskRepository, {
+    streamerProfileId: profile.id,
+    widgetId: widget.id,
+    taskId: String(formData.get("taskId") ?? ""),
+    taskText: String(formData.get("taskText") ?? "")
+  });
+
+  revalidatePath(`/dashboard/${profile.id}`);
+  redirect(`/dashboard/${profile.id}`);
+}
+
+export async function completeTaskFromDashboard(formData: FormData) {
+  const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
+
+  await completeDashboardTask(taskRepository, {
+    streamerProfileId: profile.id,
+    widgetId: widget.id,
+    taskId: String(formData.get("taskId") ?? ""),
+    closedByLabel: profile.displayName
+  });
+
+  revalidatePath(`/dashboard/${profile.id}`);
+  redirect(`/dashboard/${profile.id}`);
+}
+
+export async function removeTaskFromDashboard(formData: FormData) {
+  const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
+
+  await removeDashboardTask(taskRepository, {
+    streamerProfileId: profile.id,
+    widgetId: widget.id,
+    taskId: String(formData.get("taskId") ?? ""),
+    closedByLabel: profile.displayName
+  });
+
+  revalidatePath(`/dashboard/${profile.id}`);
+  redirect(`/dashboard/${profile.id}`);
+}
+
+export async function resetTaskListFromDashboard(formData: FormData) {
+  const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
+
+  await resetDashboardTaskList(taskRepository, {
+    streamerProfileId: profile.id,
+    widgetId: widget.id,
+    closedByLabel: profile.displayName
+  });
+
+  revalidatePath(`/dashboard/${profile.id}`);
+  redirect(`/dashboard/${profile.id}`);
 }

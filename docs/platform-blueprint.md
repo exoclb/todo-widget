@@ -110,6 +110,8 @@ MVP route contract:
 - Hosted Overlay MVP renders the saved Overlay State it receives at initialization
   time. Polling, realtime refresh, and live dashboard/chat updates are follow-up
   work after state ownership is stable.
+- The JSON contract remains available only for clients that explicitly request
+  `Accept: application/json`; browser/OBS requests receive rendered HTML.
 
 Inactive Overlay Link behavior:
 
@@ -168,6 +170,11 @@ Chat Command Handler inputs:
 - Command behavior settings such as cooldowns, task eligibility limits, owner
   capacity, blacklist words, moderator names, and streamer fallback names belong to
   the Chat Command Handler.
+- The hosted chat command ingress is a server-to-server API. It authenticates with a
+  bearer token, validates the payload, loads Active Widget command settings from the
+  backend, rejects inactive widget targets, detects command conflicts across Active
+  Widgets, writes Task List State, and records accepted or Ignored Command outcomes
+  in Command Log.
 - Command names should not be added to Hosted Overlay render state unless a future
   command-help overlay feature explicitly needs to display them.
 

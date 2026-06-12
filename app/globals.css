@@ -153,3 +153,31 @@ p {
 .danger {
   color: var(--danger);
 }
+
+.task-list {
+  display: grid;
+  gap: 12px;
+}
+
+.task-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.task-card p {
+  margin: 0;
+}
+
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.task-actions .input {
+  flex: 1 1 260px;
+}
