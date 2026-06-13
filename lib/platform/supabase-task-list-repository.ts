@@ -86,6 +86,20 @@ export function createSupabaseTaskListRepository(supabase: SupabaseClient) {
       }
 
       if (existingWidget) {
+        await supabase.from("task_widget_configs").upsert({
+          widget_id: existingWidget.id,
+          render_settings: {
+            emptyText: "No tasks yet",
+            maxItems: 10,
+            showCompleted: true,
+            showProgress: true,
+            enableVoting: false,
+            votePrioritySort: false,
+            layoutMode: "compact"
+          },
+          command_settings: {}
+        }, { onConflict: "widget_id", ignoreDuplicates: true });
+
         return existingWidget as WidgetRow;
       }
 
@@ -121,6 +135,69 @@ export function createSupabaseTaskListRepository(supabase: SupabaseClient) {
       });
 
       return widget as WidgetRow;
+    },
+
+    async findTaskWidgetConfig(widgetId: string) {
+      const { data: widget, error: widgetError } = await supabase
+        .from("widgets")
+        .select("id, title, enabled, position")
+        .eq("id", widgetId)
+        .maybeSingle();
+
+      if (widgetError) {
+        throw widgetError;
+      }
+
+      if (!widget) return null;
+
+      const { data: config, error: configError } = await supabase
+        .from("task_widget_configs")
+        .select("render_settings, command_settings")
+        .eq("widget_id", widgetId)
+        .maybeSingle();
+
+      if (configError) {
+        throw configError;
+      }
+
+      return {
+        widgetId,
+        title: widget.title,
+        enabled: widget.enabled,
+        position: widget.position,
+        renderSettings: (config?.render_settings as Record<string, unknown>) ?? {},
+        commandSettings: (config?.command_settings as Record<string, unknown>) ?? {}
+      };
+    },
+
+    async updateTaskWidgetConfig(widgetId: string, patch: Record<string, unknown>) {
+      const widgetUpdate: Record<string, unknown> = {};
+      if (patch.title !== undefined) widgetUpdate.title = patch.title;
+      if (patch.position !== undefined) widgetUpdate.position = patch.position;
+      if (patch.enabled !== undefined) widgetUpdate.enabled = patch.enabled;
+
+      if (Object.keys(widgetUpdate).length > 0) {
+        const { error: widgetError } = await supabase.from("widgets").update(widgetUpdate).eq("id", widgetId);
+        if (widgetError) {
+          throw widgetError;
+        }
+      }
+
+      const current = await this.findTaskWidgetConfig(widgetId);
+      const { error: configError } = await supabase.from("task_widget_configs").upsert(
+        {
+          widget_id: widgetId,
+          render_settings: patch.renderSettings ?? current?.renderSettings ?? {},
+          command_settings: patch.commandSettings ?? current?.commandSettings ?? {}
+        },
+        { onConflict: "widget_id" }
+      );
+
+      if (configError) {
+        throw configError;
+      }
+
+      return this.findTaskWidgetConfig(widgetId);
     },
 
     async listActiveWidgetCommandSettings(streamerProfileId: string) {

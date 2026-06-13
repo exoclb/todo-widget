@@ -8,7 +8,8 @@ import {
   editTaskFromDashboard,
   removeTaskFromDashboard,
   resetTaskListFromDashboard,
-  regenerateOverlayLinkFromDashboard
+  regenerateOverlayLinkFromDashboard,
+  updateTaskWidgetSettingsFromDashboard
 } from "../actions";
 import {
   PlatformAuthorizationError,
@@ -44,6 +45,7 @@ export default async function ScopedDashboardPage({ params, searchParams }: Scop
     const widget = await taskRepository.ensureDefaultTaskWidgetForProfile(profile.id);
     const taskListState = await taskRepository.findTaskListStateByWidgetId(widget.id);
     const tasks = taskListState ? await taskRepository.listRenderableTasks(taskListState.id) : [];
+    const widgetConfig = await taskRepository.findTaskWidgetConfig(widget.id);
 
     return (
       <main className="shell">
@@ -97,6 +99,63 @@ export default async function ScopedDashboardPage({ params, searchParams }: Scop
             <form action={regenerateOverlayLinkFromDashboard}>
               <input name="profileId" type="hidden" value={profile.id} />
               <button className="button secondary" type="submit">Regenerate Overlay Link</button>
+            </form>
+          </section>
+
+          <section className="panel-section stack">
+            <div>
+              <p className="eyebrow">Task Widget Settings</p>
+              <h2>Render settings</h2>
+              <p className="meta">These settings are public-safe render inputs for Saved Preview and Hosted Overlay.</p>
+            </div>
+            <form action={updateTaskWidgetSettingsFromDashboard} className="stack">
+              <input name="profileId" type="hidden" value={profile.id} />
+              <label className="field">
+                <span className="label">Widget Title</span>
+                <input className="input" name="title" defaultValue={widgetConfig?.title ?? "STREAM TASKS"} required />
+              </label>
+              <label className="field">
+                <span className="label">Position</span>
+                <select className="input" name="position" defaultValue={widgetConfig?.position ?? "top-right"}>
+                  <option value="top-right">Top right</option>
+                  <option value="top-left">Top left</option>
+                  <option value="bottom-right">Bottom right</option>
+                  <option value="bottom-left">Bottom left</option>
+                </select>
+              </label>
+              <label className="field">
+                <span className="label">Empty Text</span>
+                <input className="input" name="emptyText" defaultValue={String(widgetConfig?.renderSettings?.emptyText ?? "No tasks yet")} />
+              </label>
+              <label className="field">
+                <span className="label">Max Items</span>
+                <input className="input" name="maxItems" type="number" min="1" max="50" defaultValue={Number(widgetConfig?.renderSettings?.maxItems ?? 10)} />
+              </label>
+              <label className="field">
+                <span className="label">Layout Mode</span>
+                <select className="input" name="layoutMode" defaultValue={String(widgetConfig?.renderSettings?.layoutMode ?? "compact")}>
+                  <option value="compact">Compact</option>
+                  <option value="detailed">Detailed</option>
+                  <option value="minimal">Minimal</option>
+                </select>
+              </label>
+              <label className="checkbox-row">
+                <input name="enableVoting" type="checkbox" defaultChecked={Boolean(widgetConfig?.renderSettings?.enableVoting)} />
+                <span>Show Voting Mode data</span>
+              </label>
+              <label className="checkbox-row">
+                <input name="votePrioritySort" type="checkbox" defaultChecked={Boolean(widgetConfig?.renderSettings?.votePrioritySort)} />
+                <span>Sort by vote priority</span>
+              </label>
+              <label className="checkbox-row">
+                <input name="showCompleted" type="checkbox" defaultChecked={Boolean(widgetConfig?.renderSettings?.showCompleted ?? true)} />
+                <span>Show completed tasks</span>
+              </label>
+              <label className="checkbox-row">
+                <input name="showProgress" type="checkbox" defaultChecked={Boolean(widgetConfig?.renderSettings?.showProgress ?? true)} />
+                <span>Show progress</span>
+              </label>
+              <button className="button secondary" type="submit">Save render settings</button>
             </form>
           </section>
 

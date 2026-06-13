@@ -6,6 +6,7 @@ import {
   editDashboardTaskText,
   removeDashboardTask,
   resetDashboardTaskList,
+  updateDashboardTaskWidgetSettings,
 } from "../../lib/platform/task-list-state.js";
 
 function createMemoryTaskListRepository() {
@@ -13,12 +14,36 @@ function createMemoryTaskListRepository() {
   const tasksByState = new Map();
   const overlayStates = new Map();
   const taskHistory = [];
+  const widgetConfigs = new Map();
 
   return {
     taskListStates,
     tasksByState,
     overlayStates,
     taskHistory,
+    async findTaskWidgetConfig(widgetId) {
+      return (
+        widgetConfigs.get(widgetId) ?? {
+          widgetId,
+          title: "STREAM TASKS",
+          position: "top-right",
+          enabled: true,
+          renderSettings: {},
+          commandSettings: { addCommand: "!task" },
+        }
+      );
+    },
+    async updateTaskWidgetConfig(widgetId, patch) {
+      const current = await this.findTaskWidgetConfig(widgetId);
+      const updated = {
+        ...current,
+        ...patch,
+        renderSettings: patch.renderSettings ?? current.renderSettings,
+        commandSettings: patch.commandSettings ?? current.commandSettings,
+      };
+      widgetConfigs.set(widgetId, updated);
+      return updated;
+    },
     async findTaskListStateByWidgetId(widgetId) {
       return taskListStates.get(widgetId) ?? null;
     },
@@ -290,6 +315,76 @@ describe("Dashboard Task List State write loop", () => {
     });
     assert.equal(next.task.taskNumber, 1);
     assert.equal(next.task.taskListCycleId, "cycle-2");
+  });
+
+  it("updates render-facing Task Widget settings and derives public Overlay State without command settings", async () => {
+    const repository = createMemoryTaskListRepository();
+    await addDashboardTask(repository, {
+      streamerProfileId: "profile-1",
+      widgetId: "widget-1",
+      taskText: "Render settings task",
+      streamerDisplayName: "Demo Streamer",
+    });
+
+    const result = await updateDashboardTaskWidgetSettings(repository, {
+      streamerProfileId: "profile-1",
+      widgetId: "widget-1",
+      title: "Quest Board",
+      position: "bottom-left",
+      renderSettings: {
+        emptyText: "No quests yet",
+        maxItems: 5,
+        layoutMode: "detailed",
+        enableVoting: true,
+        votePrioritySort: true,
+        commandSettings: { addCommand: "!leak" },
+      },
+      commandSettings: {
+        addCommand: "!quest",
+        taskManagerSubjectHashes: ["manager-hash-1"],
+      },
+    });
+
+    assert.equal(result.widgetConfig.title, "Quest Board");
+    assert.equal(result.widgetConfig.commandSettings.addCommand, "!quest");
+
+    const overlayState = await repository.findOverlayStateByStreamerProfileId("profile-1");
+    assert.equal(overlayState.widgets[0].title, "Quest Board");
+    assert.equal(overlayState.widgets[0].position, "bottom-left");
+    assert.deepEqual(overlayState.widgets[0].settings, {
+      emptyText: "No quests yet",
+      maxItems: 5,
+      layoutMode: "detailed",
+      enableVoting: true,
+      votePrioritySort: true,
+    });
+    assert.equal(Object.hasOwn(overlayState.widgets[0], "commandSettings"), false);
+    assert.equal(Object.hasOwn(overlayState.widgets[0].settings, "commandSettings"), false);
+  });
+
+  it("preserves saved render-facing settings when later task writes derive Overlay State", async () => {
+    const repository = createMemoryTaskListRepository();
+    await updateDashboardTaskWidgetSettings(repository, {
+      streamerProfileId: "profile-1",
+      widgetId: "widget-1",
+      title: "Quest Board",
+      position: "bottom-left",
+      renderSettings: { emptyText: "No quests yet", maxItems: 5 },
+    });
+
+    await addDashboardTask(repository, {
+      streamerProfileId: "profile-1",
+      widgetId: "widget-1",
+      taskText: "A task after settings",
+      streamerDisplayName: "Demo Streamer",
+    });
+
+    const overlayState = await repository.findOverlayStateByStreamerProfileId("profile-1");
+    assert.equal(overlayState.widgets[0].title, "Quest Board");
+    assert.equal(overlayState.widgets[0].position, "bottom-left");
+    assert.equal(overlayState.widgets[0].settings.emptyText, "No quests yet");
+    assert.equal(overlayState.widgets[0].settings.maxItems, 5);
+    assert.equal(overlayState.widgets[0].data.todos[0].text, "A task after settings");
   });
 
   it("assigns dashboard-created tasks after existing chat-created tasks in the same Task List State", async () => {

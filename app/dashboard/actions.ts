@@ -11,7 +11,8 @@ import {
   completeDashboardTask,
   editDashboardTaskText,
   removeDashboardTask,
-  resetDashboardTaskList
+  resetDashboardTaskList,
+  updateDashboardTaskWidgetSettings
 } from "@/lib/platform/task-list-state.js";
 import { regenerateOverlayLink } from "@/lib/platform/overlay-link.js";
 import { loadOwnedStreamerProfile, updateOwnedStreamerProfile } from "@/lib/platform/streamer-profile.js";
@@ -125,6 +126,29 @@ export async function resetTaskListFromDashboard(formData: FormData) {
     streamerProfileId: profile.id,
     widgetId: widget.id,
     closedByLabel: profile.displayName
+  });
+
+  revalidatePath(`/dashboard/${profile.id}`);
+  redirect(`/dashboard/${profile.id}`);
+}
+
+export async function updateTaskWidgetSettingsFromDashboard(formData: FormData) {
+  const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
+
+  await updateDashboardTaskWidgetSettings(taskRepository, {
+    streamerProfileId: profile.id,
+    widgetId: widget.id,
+    title: String(formData.get("title") ?? ""),
+    position: String(formData.get("position") ?? "top-right"),
+    renderSettings: {
+      emptyText: String(formData.get("emptyText") ?? ""),
+      maxItems: Number(formData.get("maxItems") ?? 10),
+      layoutMode: String(formData.get("layoutMode") ?? "compact"),
+      enableVoting: formData.get("enableVoting") === "on",
+      votePrioritySort: formData.get("votePrioritySort") === "on",
+      showCompleted: formData.get("showCompleted") === "on",
+      showProgress: formData.get("showProgress") === "on"
+    }
   });
 
   revalidatePath(`/dashboard/${profile.id}`);
