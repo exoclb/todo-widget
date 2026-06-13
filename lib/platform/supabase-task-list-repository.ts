@@ -31,6 +31,18 @@ type TaskListStateRow = {
   version: number;
 };
 
+type TaskHistoryRow = {
+  id: string;
+  task_number: number;
+  text: string;
+  author_label: string;
+  source: "dashboard" | "chat-command";
+  outcome: "completed" | "removed" | "reset";
+  closed_by_label: string;
+  vote_count: number;
+  created_at: string | null;
+};
+
 type TaskRow = {
   id: string;
   task_list_state_id: string;
@@ -51,6 +63,20 @@ function mapTaskListState(row: TaskListStateRow) {
     currentCycleId: row.current_cycle_id,
     nextTaskNumber: row.next_task_number,
     version: row.version
+  };
+}
+
+function mapTaskHistory(row: TaskHistoryRow) {
+  return {
+    id: row.id,
+    taskNumber: row.task_number,
+    text: row.text,
+    authorLabel: row.author_label,
+    source: row.source,
+    outcome: row.outcome,
+    closedByLabel: row.closed_by_label,
+    voteCount: row.vote_count,
+    closedAt: row.created_at
   };
 }
 
@@ -440,6 +466,22 @@ export function createSupabaseTaskListRepository(supabase: SupabaseClient) {
       }
 
       return { id: data.id };
+    },
+
+    async listTaskHistory(streamerProfileId: string, widgetId: string, limit = 25) {
+      const { data, error } = await supabase
+        .from("task_history")
+        .select("id, task_number, text, author_label, source, outcome, closed_by_label, vote_count, created_at")
+        .eq("streamer_profile_id", streamerProfileId)
+        .eq("widget_id", widgetId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []).map((row) => mapTaskHistory(row as TaskHistoryRow));
     },
 
     async appendTaskHistory(entry: Record<string, unknown>) {

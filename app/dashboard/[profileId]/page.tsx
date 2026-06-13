@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseStreamerProfileRepository } from "@/lib/platform/supabase-profile-repository";
 import { createSupabaseTaskListRepository } from "@/lib/platform/supabase-task-list-repository";
 import { getDashboardSaveErrorMessage } from "@/lib/platform/dashboard-save-feedback.js";
+import { listDashboardTaskHistory } from "@/lib/platform/task-list-state.js";
 import {
   addTaskFromDashboard,
   completeTaskFromDashboard,
@@ -16,6 +17,18 @@ import {
   PlatformAuthorizationError,
   loadOwnedStreamerProfile
 } from "@/lib/platform/streamer-profile.js";
+
+type DashboardTaskHistoryEntry = {
+  id: string;
+  taskNumber: number;
+  text: string;
+  authorLabel: string;
+  source: string;
+  outcome: string;
+  closedByLabel: string;
+  voteCount: number;
+  closedAt: string | null;
+};
 
 type ScopedDashboardPageProps = {
   params: Promise<{
@@ -49,6 +62,11 @@ export default async function ScopedDashboardPage({ params, searchParams }: Scop
     const widget = await taskRepository.ensureDefaultTaskWidgetForProfile(profile.id);
     const taskListState = await taskRepository.findTaskListStateByWidgetId(widget.id);
     const tasks = taskListState ? await taskRepository.listRenderableTasks(taskListState.id) : [];
+    const taskHistory = (await listDashboardTaskHistory(taskRepository, {
+      streamerProfileId: profile.id,
+      widgetId: widget.id,
+      limit: 10
+    })) as DashboardTaskHistoryEntry[];
     const widgetConfig = await taskRepository.findTaskWidgetConfig(widget.id);
 
     return (
@@ -244,6 +262,32 @@ export default async function ScopedDashboardPage({ params, searchParams }: Scop
                 Reset Task List
               </button>
             </form>
+          </section>
+
+          <section className="panel-section stack">
+            <div>
+              <p className="eyebrow">Dashboard-private Task History</p>
+              <h2>Recently closed tasks</h2>
+              <p className="meta">History stays private to the dashboard and is not included in Hosted Overlay state.</p>
+            </div>
+            {taskHistory.length === 0 ? (
+              <p className="notice">No Task History yet.</p>
+            ) : (
+              <div className="task-list">
+                {taskHistory.map((entry) => (
+                  <article className="task-card" key={entry.id}>
+                    <div>
+                      <p className="eyebrow">#{entry.taskNumber} · {entry.outcome} · {entry.source}</p>
+                      <p>{entry.text}</p>
+                      <p className="meta">
+                        Author: {entry.authorLabel} · Closed by: {entry.closedByLabel} · Votes: {entry.voteCount}
+                        {entry.closedAt ? ` · ${new Date(entry.closedAt).toLocaleString()}` : ""}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         </section>
       </main>

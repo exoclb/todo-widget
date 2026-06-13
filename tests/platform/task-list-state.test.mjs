@@ -4,6 +4,7 @@ import {
   addDashboardTask,
   completeDashboardTask,
   editDashboardTaskText,
+  listDashboardTaskHistory,
   removeDashboardTask,
   resetDashboardTaskList,
   updateDashboardTaskWidgetSettings,
@@ -119,6 +120,12 @@ function createMemoryTaskListRepository() {
       };
       taskHistory.push(historyEntry);
       return historyEntry;
+    },
+    async listTaskHistory(streamerProfileId, widgetId, limit = 25) {
+      return taskHistory
+        .filter((entry) => entry.streamerProfileId === streamerProfileId && entry.widgetId === widgetId)
+        .slice(-limit)
+        .reverse();
     },
     async saveOverlayState(streamerProfileId, overlayState) {
       overlayStates.set(streamerProfileId, overlayState);
@@ -388,6 +395,46 @@ describe("Dashboard Task List State write loop", () => {
     assert.equal(overlayState.widgets[0].settings.emptyText, "No quests yet");
     assert.equal(overlayState.widgets[0].settings.maxItems, 5);
     assert.equal(overlayState.widgets[0].data.todos[0].text, "A task after settings");
+  });
+
+  it("lists dashboard-private Task History without adding it to public Overlay State", async () => {
+    const repository = createMemoryTaskListRepository();
+
+    const added = await addDashboardTask(repository, {
+      streamerProfileId: "profile-1",
+      widgetId: "widget-1",
+      taskText: "Review previous task",
+      streamerDisplayName: "Demo Streamer",
+    });
+
+    await completeDashboardTask(repository, {
+      streamerProfileId: "profile-1",
+      widgetId: "widget-1",
+      taskId: added.task.id,
+      closedByLabel: "Demo Streamer",
+    });
+
+    const history = await listDashboardTaskHistory(repository, {
+      streamerProfileId: "profile-1",
+      widgetId: "widget-1",
+    });
+
+    assert.deepEqual(history, [
+      {
+        id: "history-1",
+        taskNumber: 1,
+        text: "Review previous task",
+        authorLabel: "Demo Streamer",
+        source: "dashboard",
+        outcome: "completed",
+        closedByLabel: "Demo Streamer",
+        voteCount: 0,
+        closedAt: null,
+      },
+    ]);
+
+    const overlayState = await repository.findOverlayStateByStreamerProfileId("profile-1");
+    assert.equal(Object.hasOwn(overlayState, "taskHistory"), false);
   });
 
   it("assigns dashboard-created tasks after existing chat-created tasks in the same Task List State", async () => {
