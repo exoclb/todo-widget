@@ -173,6 +173,7 @@ export async function updateTaskWidgetSettingsFromDashboard(formData: FormData) 
         emptyText: String(formData.get("emptyText") ?? ""),
         maxItems: Number(formData.get("maxItems") ?? 10),
         layoutMode: String(formData.get("layoutMode") ?? "compact"),
+        overlayRefreshIntervalMs: Number(formData.get("overlayRefreshIntervalMs") ?? 5000),
         enableVoting: formData.get("enableVoting") === "on",
         votePrioritySort: formData.get("votePrioritySort") === "on",
         showCompleted: formData.get("showCompleted") === "on",

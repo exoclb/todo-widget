@@ -152,6 +152,18 @@ export default async function ScopedDashboardPage({ params, searchParams }: Scop
                   <option value="minimal">Minimal</option>
                 </select>
               </label>
+              <label className="field">
+                <span className="label">Overlay Refresh Interval (ms)</span>
+                <input
+                  className="input"
+                  name="overlayRefreshIntervalMs"
+                  type="number"
+                  min="1000"
+                  max="60000"
+                  step="500"
+                  defaultValue={Number(widgetConfig?.renderSettings?.overlayRefreshIntervalMs ?? 5000)}
+                />
+              </label>
               <label className="checkbox-row">
                 <input name="enableVoting" type="checkbox" defaultChecked={Boolean(widgetConfig?.renderSettings?.enableVoting)} />
                 <span>Show Voting Mode data</span>

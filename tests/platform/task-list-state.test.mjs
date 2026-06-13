@@ -161,6 +161,7 @@ describe("Dashboard Task List State write loop", () => {
       },
     ]);
     assert.equal(overlayState.derivedFromTaskListVersion, 1);
+    assert.equal(overlayState.overlay.refreshIntervalMs, 5000);
     assert.equal(Object.hasOwn(overlayState.widgets[0].data.todos[0], "ownerSubjectHash"), false);
   });
 
@@ -337,6 +338,7 @@ describe("Dashboard Task List State write loop", () => {
         layoutMode: "detailed",
         enableVoting: true,
         votePrioritySort: true,
+        overlayRefreshIntervalMs: 2000,
         commandSettings: { addCommand: "!leak" },
       },
       commandSettings: {
@@ -358,6 +360,7 @@ describe("Dashboard Task List State write loop", () => {
       enableVoting: true,
       votePrioritySort: true,
     });
+    assert.deepEqual(overlayState.overlay, { refreshIntervalMs: 2000 });
     assert.equal(Object.hasOwn(overlayState.widgets[0], "commandSettings"), false);
     assert.equal(Object.hasOwn(overlayState.widgets[0].settings, "commandSettings"), false);
   });

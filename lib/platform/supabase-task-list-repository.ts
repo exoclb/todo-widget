@@ -95,7 +95,8 @@ export function createSupabaseTaskListRepository(supabase: SupabaseClient) {
             showProgress: true,
             enableVoting: false,
             votePrioritySort: false,
-            layoutMode: "compact"
+            layoutMode: "compact",
+            overlayRefreshIntervalMs: 5000
           },
           command_settings: {}
         }, { onConflict: "widget_id", ignoreDuplicates: true });
@@ -129,7 +130,8 @@ export function createSupabaseTaskListRepository(supabase: SupabaseClient) {
           showProgress: true,
           enableVoting: false,
           votePrioritySort: false,
-          layoutMode: "compact"
+          layoutMode: "compact",
+          overlayRefreshIntervalMs: 5000
         },
         command_settings: {}
       });
