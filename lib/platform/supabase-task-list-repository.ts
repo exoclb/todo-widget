@@ -31,6 +31,18 @@ type TaskListStateRow = {
   version: number;
 };
 
+type CommandLogRow = {
+  id: string;
+  command_name: string;
+  raw_command_text: string;
+  actor_label: string;
+  outcome: "accepted" | "ignored";
+  ignored_reason: string | null;
+  created_task_id: string | null;
+  affected_task_id: string | null;
+  created_at: string | null;
+};
+
 type TaskHistoryRow = {
   id: string;
   task_number: number;
@@ -63,6 +75,20 @@ function mapTaskListState(row: TaskListStateRow) {
     currentCycleId: row.current_cycle_id,
     nextTaskNumber: row.next_task_number,
     version: row.version
+  };
+}
+
+function mapCommandLog(row: CommandLogRow) {
+  return {
+    id: row.id,
+    commandName: row.command_name,
+    rawCommandText: row.raw_command_text,
+    actorLabel: row.actor_label,
+    outcome: row.outcome,
+    ignoredReason: row.ignored_reason,
+    createdTaskId: row.created_task_id,
+    affectedTaskId: row.affected_task_id,
+    createdAt: row.created_at
   };
 }
 
@@ -592,6 +618,22 @@ export function createSupabaseTaskListRepository(supabase: SupabaseClient) {
         viewerLabel: data.viewer_label,
         cooldownUntil: data.cooldown_until
       };
+    },
+
+    async listCommandLogs(streamerProfileId: string, widgetId: string, limit = 25) {
+      const { data, error } = await supabase
+        .from("command_logs")
+        .select("id, command_name, raw_command_text, actor_label, outcome, ignored_reason, created_task_id, affected_task_id, created_at")
+        .eq("streamer_profile_id", streamerProfileId)
+        .eq("widget_id", widgetId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []).map((row) => mapCommandLog(row as CommandLogRow));
     },
 
     async appendCommandLog(entry: Record<string, unknown>) {

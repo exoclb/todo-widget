@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createHostedChatCommandProcessor, processHostedChatCommand } from "../../lib/platform/hosted-chat-command.js";
+import {
+  createHostedChatCommandProcessor,
+  listDashboardCommandLog,
+  processHostedChatCommand,
+} from "../../lib/platform/hosted-chat-command.js";
 
 function createMemoryChatRepository() {
   const taskListStates = new Map();
@@ -82,9 +86,15 @@ function createMemoryChatRepository() {
       return overlayStates.get(streamerProfileId) ?? null;
     },
     async appendCommandLog(entry) {
-      const commandLog = { id: `command-log-${commandLogs.length + 1}`, ...entry };
+      const commandLog = { id: `command-log-${commandLogs.length + 1}`, createdAt: null, ...entry };
       commandLogs.push(commandLog);
       return commandLog;
+    },
+    async listCommandLogs(streamerProfileId, widgetId, limit = 25) {
+      return commandLogs
+        .filter((entry) => entry.streamerProfileId === streamerProfileId && entry.widgetId === widgetId)
+        .slice(-limit)
+        .reverse();
     },
     async findTaskVote(taskListStateId, taskListCycleId, viewerSubjectHash) {
       return taskVotes.get(`${taskListStateId}:${taskListCycleId}:${viewerSubjectHash}`) ?? null;
@@ -126,6 +136,7 @@ describe("Hosted Chat Command write loop", () => {
     assert.equal(result.taskListState.version, 1);
     assert.deepEqual(repository.commandLogs[0], {
       id: "command-log-1",
+      createdAt: null,
       streamerProfileId: "profile-1",
       widgetId: "widget-1",
       taskListStateId: "task-list-state-1",
@@ -139,7 +150,27 @@ describe("Hosted Chat Command write loop", () => {
       affectedTaskId: null,
     });
 
+    const commandLog = await listDashboardCommandLog(repository, {
+      streamerProfileId: "profile-1",
+      widgetId: "widget-1",
+    });
+
+    assert.deepEqual(commandLog, [
+      {
+        id: "command-log-1",
+        commandName: "!task",
+        rawCommandText: "!task Review raid plan",
+        actorLabel: "ViewerOne",
+        outcome: "accepted",
+        ignoredReason: null,
+        createdTaskId: "task-1",
+        affectedTaskId: null,
+        createdAt: null,
+      },
+    ]);
+
     const overlayState = await repository.findOverlayStateByStreamerProfileId("profile-1");
+    assert.equal(Object.hasOwn(overlayState, "commandLogs"), false);
     assert.deepEqual(overlayState.widgets[0].data.todos, [
       {
         taskNumber: 1,

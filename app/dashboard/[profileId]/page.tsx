@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseStreamerProfileRepository } from "@/lib/platform/supabase-profile-repository";
 import { createSupabaseTaskListRepository } from "@/lib/platform/supabase-task-list-repository";
 import { getDashboardSaveErrorMessage } from "@/lib/platform/dashboard-save-feedback.js";
+import { listDashboardCommandLog } from "@/lib/platform/hosted-chat-command.js";
 import { listDashboardTaskHistory } from "@/lib/platform/task-list-state.js";
 import {
   addTaskFromDashboard,
@@ -17,6 +18,18 @@ import {
   PlatformAuthorizationError,
   loadOwnedStreamerProfile
 } from "@/lib/platform/streamer-profile.js";
+
+type DashboardCommandLogEntry = {
+  id: string;
+  commandName: string;
+  rawCommandText: string;
+  actorLabel: string;
+  outcome: string;
+  ignoredReason: string | null;
+  createdTaskId: string | null;
+  affectedTaskId: string | null;
+  createdAt: string | null;
+};
 
 type DashboardTaskHistoryEntry = {
   id: string;
@@ -67,6 +80,11 @@ export default async function ScopedDashboardPage({ params, searchParams }: Scop
       widgetId: widget.id,
       limit: 10
     })) as DashboardTaskHistoryEntry[];
+    const commandLog = (await listDashboardCommandLog(taskRepository, {
+      streamerProfileId: profile.id,
+      widgetId: widget.id,
+      limit: 10
+    })) as DashboardCommandLogEntry[];
     const widgetConfig = await taskRepository.findTaskWidgetConfig(widget.id);
 
     return (
@@ -262,6 +280,33 @@ export default async function ScopedDashboardPage({ params, searchParams }: Scop
                 Reset Task List
               </button>
             </form>
+          </section>
+
+          <section className="panel-section stack">
+            <div>
+              <p className="eyebrow">Dashboard-private Command Log</p>
+              <h2>Recent chat commands</h2>
+              <p className="meta">Accepted and ignored command outcomes stay private to the dashboard.</p>
+            </div>
+            {commandLog.length === 0 ? (
+              <p className="notice">No Command Log entries yet.</p>
+            ) : (
+              <div className="task-list">
+                {commandLog.map((entry) => (
+                  <article className="task-card" key={entry.id}>
+                    <div>
+                      <p className="eyebrow">{entry.commandName} · {entry.outcome}</p>
+                      <p>{entry.rawCommandText}</p>
+                      <p className="meta">
+                        Actor: {entry.actorLabel}
+                        {entry.ignoredReason ? ` · Ignored: ${entry.ignoredReason}` : ""}
+                        {entry.createdAt ? ` · ${new Date(entry.createdAt).toLocaleString()}` : ""}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="panel-section stack">
