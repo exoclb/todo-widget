@@ -15,6 +15,10 @@ import {
   updateDashboardTaskWidgetSettings
 } from "@/lib/platform/task-list-state.js";
 import { regenerateOverlayLink } from "@/lib/platform/overlay-link.js";
+import {
+  createDashboardSaveErrorRedirect,
+  toDashboardSaveErrorCode
+} from "@/lib/platform/dashboard-save-feedback.js";
 import { loadOwnedStreamerProfile, updateOwnedStreamerProfile } from "@/lib/platform/streamer-profile.js";
 
 async function requireOwnedDashboardContext(formData: FormData) {
@@ -63,15 +67,23 @@ export async function updateStreamerProfile(formData: FormData) {
   redirect("/dashboard");
 }
 
+function redirectDashboardSaveError(profileId: string, error: unknown, action: string): never {
+  redirect(createDashboardSaveErrorRedirect(profileId, toDashboardSaveErrorCode(error), action));
+}
+
 export async function addTaskFromDashboard(formData: FormData) {
   const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
 
-  await addDashboardTask(taskRepository, {
-    streamerProfileId: profile.id,
-    widgetId: widget.id,
-    taskText: String(formData.get("taskText") ?? ""),
-    streamerDisplayName: profile.displayName
-  });
+  try {
+    await addDashboardTask(taskRepository, {
+      streamerProfileId: profile.id,
+      widgetId: widget.id,
+      taskText: String(formData.get("taskText") ?? ""),
+      streamerDisplayName: profile.displayName
+    });
+  } catch (error) {
+    redirectDashboardSaveError(profile.id, error, "task");
+  }
 
   revalidatePath(`/dashboard/${profile.id}`);
   redirect(`/dashboard/${profile.id}`);
@@ -80,12 +92,16 @@ export async function addTaskFromDashboard(formData: FormData) {
 export async function editTaskFromDashboard(formData: FormData) {
   const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
 
-  await editDashboardTaskText(taskRepository, {
-    streamerProfileId: profile.id,
-    widgetId: widget.id,
-    taskId: String(formData.get("taskId") ?? ""),
-    taskText: String(formData.get("taskText") ?? "")
-  });
+  try {
+    await editDashboardTaskText(taskRepository, {
+      streamerProfileId: profile.id,
+      widgetId: widget.id,
+      taskId: String(formData.get("taskId") ?? ""),
+      taskText: String(formData.get("taskText") ?? "")
+    });
+  } catch (error) {
+    redirectDashboardSaveError(profile.id, error, "task");
+  }
 
   revalidatePath(`/dashboard/${profile.id}`);
   redirect(`/dashboard/${profile.id}`);
@@ -94,12 +110,16 @@ export async function editTaskFromDashboard(formData: FormData) {
 export async function completeTaskFromDashboard(formData: FormData) {
   const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
 
-  await completeDashboardTask(taskRepository, {
-    streamerProfileId: profile.id,
-    widgetId: widget.id,
-    taskId: String(formData.get("taskId") ?? ""),
-    closedByLabel: profile.displayName
-  });
+  try {
+    await completeDashboardTask(taskRepository, {
+      streamerProfileId: profile.id,
+      widgetId: widget.id,
+      taskId: String(formData.get("taskId") ?? ""),
+      closedByLabel: profile.displayName
+    });
+  } catch (error) {
+    redirectDashboardSaveError(profile.id, error, "task");
+  }
 
   revalidatePath(`/dashboard/${profile.id}`);
   redirect(`/dashboard/${profile.id}`);
@@ -108,12 +128,16 @@ export async function completeTaskFromDashboard(formData: FormData) {
 export async function removeTaskFromDashboard(formData: FormData) {
   const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
 
-  await removeDashboardTask(taskRepository, {
-    streamerProfileId: profile.id,
-    widgetId: widget.id,
-    taskId: String(formData.get("taskId") ?? ""),
-    closedByLabel: profile.displayName
-  });
+  try {
+    await removeDashboardTask(taskRepository, {
+      streamerProfileId: profile.id,
+      widgetId: widget.id,
+      taskId: String(formData.get("taskId") ?? ""),
+      closedByLabel: profile.displayName
+    });
+  } catch (error) {
+    redirectDashboardSaveError(profile.id, error, "task");
+  }
 
   revalidatePath(`/dashboard/${profile.id}`);
   redirect(`/dashboard/${profile.id}`);
@@ -122,11 +146,15 @@ export async function removeTaskFromDashboard(formData: FormData) {
 export async function resetTaskListFromDashboard(formData: FormData) {
   const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
 
-  await resetDashboardTaskList(taskRepository, {
-    streamerProfileId: profile.id,
-    widgetId: widget.id,
-    closedByLabel: profile.displayName
-  });
+  try {
+    await resetDashboardTaskList(taskRepository, {
+      streamerProfileId: profile.id,
+      widgetId: widget.id,
+      closedByLabel: profile.displayName
+    });
+  } catch (error) {
+    redirectDashboardSaveError(profile.id, error, "task");
+  }
 
   revalidatePath(`/dashboard/${profile.id}`);
   redirect(`/dashboard/${profile.id}`);
@@ -135,21 +163,25 @@ export async function resetTaskListFromDashboard(formData: FormData) {
 export async function updateTaskWidgetSettingsFromDashboard(formData: FormData) {
   const { profile, taskRepository, widget } = await requireOwnedDashboardContext(formData);
 
-  await updateDashboardTaskWidgetSettings(taskRepository, {
-    streamerProfileId: profile.id,
-    widgetId: widget.id,
-    title: String(formData.get("title") ?? ""),
-    position: String(formData.get("position") ?? "top-right"),
-    renderSettings: {
-      emptyText: String(formData.get("emptyText") ?? ""),
-      maxItems: Number(formData.get("maxItems") ?? 10),
-      layoutMode: String(formData.get("layoutMode") ?? "compact"),
-      enableVoting: formData.get("enableVoting") === "on",
-      votePrioritySort: formData.get("votePrioritySort") === "on",
-      showCompleted: formData.get("showCompleted") === "on",
-      showProgress: formData.get("showProgress") === "on"
-    }
-  });
+  try {
+    await updateDashboardTaskWidgetSettings(taskRepository, {
+      streamerProfileId: profile.id,
+      widgetId: widget.id,
+      title: String(formData.get("title") ?? ""),
+      position: String(formData.get("position") ?? "top-right"),
+      renderSettings: {
+        emptyText: String(formData.get("emptyText") ?? ""),
+        maxItems: Number(formData.get("maxItems") ?? 10),
+        layoutMode: String(formData.get("layoutMode") ?? "compact"),
+        enableVoting: formData.get("enableVoting") === "on",
+        votePrioritySort: formData.get("votePrioritySort") === "on",
+        showCompleted: formData.get("showCompleted") === "on",
+        showProgress: formData.get("showProgress") === "on"
+      }
+    });
+  } catch (error) {
+    redirectDashboardSaveError(profile.id, error, "settings");
+  }
 
   revalidatePath(`/dashboard/${profile.id}`);
   redirect(`/dashboard/${profile.id}`);
@@ -169,10 +201,17 @@ export async function regenerateOverlayLinkFromDashboard(formData: FormData) {
   const profileRepository = createSupabaseStreamerProfileRepository(supabase);
   const profile = await loadOwnedStreamerProfile(profileRepository, user, profileId);
   const overlayRepository = createSupabaseOverlayRepository(supabase);
-  const result = await regenerateOverlayLink(overlayRepository, {
-    streamerProfileId: profile.id
-  });
+  let publicToken = "";
+
+  try {
+    const result = await regenerateOverlayLink(overlayRepository, {
+      streamerProfileId: profile.id
+    });
+    publicToken = result.publicToken;
+  } catch (error) {
+    redirectDashboardSaveError(profile.id, error, "overlay-link");
+  }
 
   revalidatePath(`/dashboard/${profile.id}`);
-  redirect(`/dashboard/${profile.id}?newOverlayToken=${encodeURIComponent(result.publicToken)}`);
+  redirect(`/dashboard/${profile.id}?newOverlayToken=${encodeURIComponent(publicToken)}`);
 }

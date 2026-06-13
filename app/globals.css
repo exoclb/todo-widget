@@ -151,6 +151,16 @@ p {
   padding: 12px 14px;
 }
 
+.error-notice {
+  border-color: rgba(158, 59, 55, 0.35);
+  background: #fff0ee;
+  color: var(--danger);
+}
+
+.error-notice p {
+  color: inherit;
+}
+
 .danger {
   color: var(--danger);
 }

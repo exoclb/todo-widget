@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseStreamerProfileRepository } from "@/lib/platform/supabase-profile-repository";
 import { createSupabaseTaskListRepository } from "@/lib/platform/supabase-task-list-repository";
+import { getDashboardSaveErrorMessage } from "@/lib/platform/dashboard-save-feedback.js";
 import {
   addTaskFromDashboard,
   completeTaskFromDashboard,
@@ -22,12 +23,15 @@ type ScopedDashboardPageProps = {
   }>;
   searchParams?: Promise<{
     newOverlayToken?: string;
+    saveError?: string;
+    saveAction?: string;
   }>;
 };
 
 export default async function ScopedDashboardPage({ params, searchParams }: ScopedDashboardPageProps) {
   const { profileId } = await params;
-  const { newOverlayToken } = (await searchParams) ?? {};
+  const { newOverlayToken, saveError, saveAction } = (await searchParams) ?? {};
+  const saveErrorMessage = getDashboardSaveErrorMessage(saveError);
   const supabase = await createSupabaseServerClient();
   const {
     data: { user }
@@ -58,6 +62,15 @@ export default async function ScopedDashboardPage({ params, searchParams }: Scop
               public Overlay State used by Saved Preview and Hosted Overlay.
             </p>
           </header>
+          {saveErrorMessage ? (
+            <section className="panel-section">
+              <div className="notice error-notice" role="alert">
+                <p className="eyebrow">Save failed{saveAction ? ` · ${saveAction}` : ""}</p>
+                <p>{saveErrorMessage}</p>
+              </div>
+            </section>
+          ) : null}
+
           <div className="panel-section grid">
             <div>
               <p className="eyebrow">Profile ID</p>
