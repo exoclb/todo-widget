@@ -7,7 +7,8 @@ import {
   completeTaskFromDashboard,
   editTaskFromDashboard,
   removeTaskFromDashboard,
-  resetTaskListFromDashboard
+  resetTaskListFromDashboard,
+  regenerateOverlayLinkFromDashboard
 } from "../actions";
 import {
   PlatformAuthorizationError,
@@ -18,10 +19,14 @@ type ScopedDashboardPageProps = {
   params: Promise<{
     profileId: string;
   }>;
+  searchParams?: Promise<{
+    newOverlayToken?: string;
+  }>;
 };
 
-export default async function ScopedDashboardPage({ params }: ScopedDashboardPageProps) {
+export default async function ScopedDashboardPage({ params, searchParams }: ScopedDashboardPageProps) {
   const { profileId } = await params;
+  const { newOverlayToken } = (await searchParams) ?? {};
   const supabase = await createSupabaseServerClient();
   const {
     data: { user }
@@ -73,6 +78,27 @@ export default async function ScopedDashboardPage({ params }: ScopedDashboardPag
               <p><a href={`/dashboard/${profile.id}/saved-preview`} target="_blank">Open saved preview</a></p>
             </div>
           </div>
+
+          <section className="panel-section stack">
+            <div>
+              <p className="eyebrow">Overlay Link</p>
+              <h2>Hosted Overlay access</h2>
+              <p className="meta">
+                Regenerate the public OBS/browser-source link if it has been shared or leaked.
+                Previous links become inactive and render an empty stream-safe shell.
+              </p>
+            </div>
+            {newOverlayToken ? (
+              <div className="notice">
+                <p>Copy this new Overlay Link now. The raw token is only shown immediately after regeneration.</p>
+                <p className="meta">/overlay/{newOverlayToken}</p>
+              </div>
+            ) : null}
+            <form action={regenerateOverlayLinkFromDashboard}>
+              <input name="profileId" type="hidden" value={profile.id} />
+              <button className="button secondary" type="submit">Regenerate Overlay Link</button>
+            </form>
+          </section>
 
           <section className="panel-section stack">
             <div>

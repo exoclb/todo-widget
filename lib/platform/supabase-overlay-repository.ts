@@ -66,6 +66,55 @@ export function createSupabaseOverlayRepository(supabase: SupabaseClient) {
       return data ? mapActiveOverlayLink(data as OverlayLinkRow) : null;
     },
 
+    async findActiveOverlayLinkByStreamerProfileId(streamerProfileId: string) {
+      const { data, error } = await supabase
+        .from("overlay_links")
+        .select("id, streamer_profile_id")
+        .eq("streamer_profile_id", streamerProfileId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ? mapActiveOverlayLink(data as OverlayLinkRow) : null;
+    },
+
+    async deactivateOverlayLink(linkId: string) {
+      const { data, error } = await supabase
+        .from("overlay_links")
+        .update({ status: "inactive", deactivated_at: new Date().toISOString() })
+        .eq("id", linkId)
+        .select("id, streamer_profile_id")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ? mapActiveOverlayLink(data as OverlayLinkRow) : null;
+    },
+
+    async createOverlayLink(input: Record<string, unknown>) {
+      const { data, error } = await supabase
+        .from("overlay_links")
+        .insert({
+          streamer_profile_id: input.streamerProfileId,
+          public_token_hash: input.publicTokenHash,
+          status: "active",
+          regenerated_from_link_id: input.regeneratedFromLinkId
+        })
+        .select("id, streamer_profile_id")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ? mapActiveOverlayLink(data as OverlayLinkRow) : null;
+    },
+
     async findOverlayStateByStreamerProfileId(streamerProfileId: string) {
       const { data, error } = await supabase
         .from("overlay_states")

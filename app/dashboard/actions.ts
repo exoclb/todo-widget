@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseStreamerProfileRepository } from "@/lib/platform/supabase-profile-repository";
 import { createSupabaseTaskListRepository } from "@/lib/platform/supabase-task-list-repository";
+import { createSupabaseOverlayRepository } from "@/lib/platform/supabase-overlay-repository";
 import {
   addDashboardTask,
   completeDashboardTask,
@@ -12,6 +13,7 @@ import {
   removeDashboardTask,
   resetDashboardTaskList
 } from "@/lib/platform/task-list-state.js";
+import { regenerateOverlayLink } from "@/lib/platform/overlay-link.js";
 import { loadOwnedStreamerProfile, updateOwnedStreamerProfile } from "@/lib/platform/streamer-profile.js";
 
 async function requireOwnedDashboardContext(formData: FormData) {
@@ -127,4 +129,26 @@ export async function resetTaskListFromDashboard(formData: FormData) {
 
   revalidatePath(`/dashboard/${profile.id}`);
   redirect(`/dashboard/${profile.id}`);
+}
+
+export async function regenerateOverlayLinkFromDashboard(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  const profileId = String(formData.get("profileId") ?? "");
+  const profileRepository = createSupabaseStreamerProfileRepository(supabase);
+  const profile = await loadOwnedStreamerProfile(profileRepository, user, profileId);
+  const overlayRepository = createSupabaseOverlayRepository(supabase);
+  const result = await regenerateOverlayLink(overlayRepository, {
+    streamerProfileId: profile.id
+  });
+
+  revalidatePath(`/dashboard/${profile.id}`);
+  redirect(`/dashboard/${profile.id}?newOverlayToken=${encodeURIComponent(result.publicToken)}`);
 }

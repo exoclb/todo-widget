@@ -4,6 +4,7 @@ import {
   createOverlayRoutePayload,
   hashOverlayLinkToken,
   normalizeOverlayLinkToken,
+  regenerateOverlayLink,
   resolveOverlayStateForToken,
 } from "../../lib/platform/overlay-link.js";
 
@@ -14,12 +15,42 @@ function createMemoryOverlayRepository({ links = [], states = [] } = {}) {
 
   return {
     calls,
+    overlayLinks,
     async findActiveOverlayLinkByTokenHash(publicTokenHash) {
       calls.push(["findActiveOverlayLinkByTokenHash", publicTokenHash]);
       const link = overlayLinks.get(publicTokenHash);
       return link && link.status === "active"
         ? { id: link.id, streamerProfileId: link.streamerProfileId }
         : null;
+    },
+    async findActiveOverlayLinkByStreamerProfileId(streamerProfileId) {
+      calls.push(["findActiveOverlayLinkByStreamerProfileId", streamerProfileId]);
+      return (
+        [...overlayLinks.values()].find((link) => link.streamerProfileId === streamerProfileId && link.status === "active") ??
+        null
+      );
+    },
+    async deactivateOverlayLink(linkId) {
+      calls.push(["deactivateOverlayLink", linkId]);
+      for (const [tokenHash, link] of overlayLinks.entries()) {
+        if (link.id === linkId) {
+          overlayLinks.set(tokenHash, { ...link, status: "inactive", deactivatedAt: "2026-06-13T00:00:00.000Z" });
+          return overlayLinks.get(tokenHash);
+        }
+      }
+      return null;
+    },
+    async createOverlayLink(input) {
+      calls.push(["createOverlayLink", input]);
+      const link = {
+        id: `link-${overlayLinks.size + 1}`,
+        streamerProfileId: input.streamerProfileId,
+        publicTokenHash: input.publicTokenHash,
+        status: "active",
+        regeneratedFromLinkId: input.regeneratedFromLinkId ?? null,
+      };
+      overlayLinks.set(input.publicTokenHash, link);
+      return link;
     },
     async findOverlayStateByStreamerProfileId(streamerProfileId) {
       calls.push(["findOverlayStateByStreamerProfileId", streamerProfileId]);
@@ -132,6 +163,41 @@ describe("Overlay Link resolution", () => {
       repository.calls.some(([methodName]) => methodName === "findOverlayStateByStreamerProfileId"),
       false,
     );
+  });
+
+  it("regenerates Overlay Links by deactivating the previous token and storing only the new token hash", async () => {
+    const oldToken = "old-public-token";
+    const oldTokenHash = hashOverlayLinkToken(oldToken);
+    const repository = createMemoryOverlayRepository({
+      links: [
+        {
+          id: "link-1",
+          streamerProfileId: "profile-1",
+          publicTokenHash: oldTokenHash,
+          status: "active",
+        },
+      ],
+      states: [
+        {
+          id: "state-1",
+          streamerProfileId: "profile-1",
+          schemaVersion: 1,
+          state: { profile: { displayName: "Demo" }, widgets: [] },
+        },
+      ],
+    });
+
+    const result = await regenerateOverlayLink(repository, {
+      streamerProfileId: "profile-1",
+      createPublicToken: () => "new-public-token",
+    });
+
+    assert.equal(result.publicToken, "new-public-token");
+    assert.equal(result.link.publicTokenHash, hashOverlayLinkToken("new-public-token"));
+    assert.equal(result.link.regeneratedFromLinkId, "link-1");
+    assert.equal([...repository.overlayLinks.values()].find((link) => link.id === "link-1").status, "inactive");
+    assert.equal(await resolveOverlayStateForToken(repository, oldToken), null);
+    assert.equal(Object.hasOwn(result.link, "publicToken"), false);
   });
 
   it("does not expose partial data when an active link has no derived Overlay State", async () => {
