@@ -26,7 +26,7 @@ find_browser() {
 run_page() {
   page_path="$1"
   page_name="$2"
-  output="$("$BROWSER" --headless --disable-gpu --no-sandbox --disable-crash-reporter --disable-dev-shm-usage --virtual-time-budget=5000 --dump-dom "${BASE_URL}/${page_path}")"
+  output="$("$BROWSER" --headless --disable-gpu --no-sandbox --virtual-time-budget=5000 --dump-dom "${BASE_URL}/${page_path}")"
   case "$output" in
     *'<pre id="result">PASS</pre>'*|*'<pre id="result">PASS</pre>'*)
       printf "ok - %s\n" "$page_name"
@@ -58,11 +58,6 @@ run_page ".scratch/twitch-todo-widget-market-roadmap/animation-smoke.html" "task
 run_page ".scratch/twitch-todo-widget-market-roadmap/layout-smoke.html" "layout modes"
 run_page ".scratch/twitch-todo-widget-market-roadmap/custom-image-smoke.html" "custom images"
 run_page ".scratch/twitch-todo-widget-market-roadmap/voting-smoke.html" "voting mode"
-run_page ".scratch/twitch-todo-widget-market-roadmap/chat-event-smoke.html" "chat event payloads"
-run_page ".scratch/twitch-todo-widget-market-roadmap/platform-snapshot-smoke.html" "platform snapshot contract"
-run_page ".scratch/twitch-todo-widget-market-roadmap/hosted-overlay-smoke.html" "hosted overlay route"
-run_page ".scratch/twitch-todo-widget-market-roadmap/hosted-chat-command-smoke.html" "hosted chat command boundary"
 run_page ".scratch/twitch-todo-widget-market-roadmap/preview-smoke.html" "local preview controls and commands"
-run_page ".scratch/twitch-todo-widget-market-roadmap/marketplace-gallery-smoke.html" "marketplace gallery"
 
 printf "ok - smoke test suite\n"

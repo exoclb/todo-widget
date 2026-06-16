@@ -1,8 +1,2 @@
 .codex/
 .sigmashake/
-node_modules/
-.next/
-.env
-.env*.local
-.vercel/
-.supabase/

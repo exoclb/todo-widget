@@ -92,15 +92,10 @@
 
           const command = doc.getElementById("command");
           const sendButton = doc.querySelector("#command-form button");
-          const dashboardTaskText = doc.getElementById("dashboard-task-text");
-          const dashboardAddButton = doc.querySelector('[data-dashboard-action="add"]');
           const panelImageUrl = doc.getElementById("panel-image-url");
           if (!isControlAtPoint(doc, command)) throw new Error("Command input is covered");
           if (!canFocus(doc, command)) throw new Error("Command input cannot receive focus");
           if (!isControlAtPoint(doc, sendButton)) throw new Error("Send button is covered");
-          if (!isControlAtPoint(doc, dashboardTaskText)) throw new Error("Dashboard task input is covered");
-          if (!canFocus(doc, dashboardTaskText)) throw new Error("Dashboard task input cannot receive focus");
-          if (!isControlAtPoint(doc, dashboardAddButton)) throw new Error("Dashboard add button is covered");
           if (!isControlAtPoint(doc, panelImageUrl)) throw new Error("Image control is covered");
           if (!canFocus(doc, panelImageUrl)) throw new Error("Image control cannot receive focus");
 
@@ -124,24 +119,6 @@
 
           click(doc, '[data-action="reset"]', "Reset button");
           await waitFor(() => doc.querySelectorAll(".todo-widget__item").length === 0, "Reset command failed");
-
-          dashboardTaskText.value = "Preview dashboard task";
-          click(doc, '[data-dashboard-action="add"]', "Dashboard Add Task button");
-          await waitFor(
-            () => doc.getElementById("todo-list").textContent.includes("Preview dashboard task"),
-            "Dashboard add failed",
-          );
-
-          dashboardTaskText.value = "Preview dashboard edited task";
-          click(doc, '[data-dashboard-action="edit"]', "Dashboard Edit Text button");
-          await waitFor(
-            () => doc.getElementById("todo-list").textContent.includes("Preview dashboard edited task"),
-            "Dashboard edit failed",
-          );
-
-          const dashboardState = await win.TwitchTodoWidget.getState();
-          if (dashboardState.tasks[0].source !== "dashboard") throw new Error("Dashboard task source missing");
-          if (dashboardState.tasks[0].authorKey !== "") throw new Error("Dashboard task has Viewer Task Owner");
 
           result.textContent = "PASS";
         } catch (error) {

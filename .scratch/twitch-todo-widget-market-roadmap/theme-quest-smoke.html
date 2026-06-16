@@ -23,19 +23,7 @@
     <script src="../../widget.js"></script>
     <script>
       (async () => {
-        const themes = [
-          "material-light",
-          "material-dark",
-          "catppuccin",
-          "gruvbox",
-          "nord",
-          "tokyo-night",
-          "dracula",
-          "rose-pine",
-          "kanagawa",
-          "one-dark",
-          "monokai",
-        ];
+        const themes = ["minimal", "cozy", "neon", "quest", "vtuber"];
         const modes = [
           ["Task", "Tasks", "STREAM TASKS"],
           ["Quest", "Quests", "QUEST BOARD"],
@@ -75,33 +63,8 @@
               if (title !== titleText) throw new Error(`Title failed: ${titleText}`);
               if (!counter.includes(taskLabelSingular)) throw new Error(`Counter label failed: ${counter}`);
               if (!item || item.textContent.trim().length === 0) throw new Error("Task item did not render");
-              const itemBackground = getComputedStyle(item).backgroundColor;
-              if (themePreset === "material-light" && itemBackground !== "rgb(255, 255, 255)") {
-                throw new Error(`Material light item was not solid white: ${itemBackground}`);
-              }
-              if (themePreset === "material-dark" && itemBackground !== "rgb(37, 47, 67)") {
-                throw new Error(`Material dark item was not solid dark: ${itemBackground}`);
-              }
             }
           }
-
-          localStorage.clear();
-          await window.TwitchTodoWidget.init({
-            titleDisplayMode: "digital-clock",
-            clockFormat: "24h",
-            clockShowSeconds: true,
-          });
-          const clockTitle = document.getElementById("todo-title").textContent;
-          if (!/^\d{2}:\d{2}:\d{2}$/.test(clockTitle)) throw new Error(`Digital clock title failed: ${clockTitle}`);
-
-          await window.TwitchTodoWidget.init({
-            titleDisplayMode: "text",
-            titleText: "STREAM TASKS",
-          });
-          if (document.getElementById("todo-title").textContent !== "STREAM TASKS") {
-            throw new Error("Title text did not return after clock mode");
-          }
-
           result.textContent = "PASS";
         } catch (error) {
           result.textContent = `FAIL: ${error.message}`;

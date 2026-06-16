@@ -1,64 +1,8 @@
 {
-  "platformSchemaVersion": {
-    "type": "number",
-    "label": "Future platform schema version",
-    "value": 1,
-    "min": 1,
-    "max": 1,
-    "step": 1,
-    "group": "Platform (future)"
-  },
-  "profileSlug": {
-    "type": "text",
-    "label": "Future profile slug",
-    "value": "demo-streamer",
-    "group": "Platform (future)"
-  },
-  "profileDisplayName": {
-    "type": "text",
-    "label": "Future profile display name",
-    "value": "Demo Streamer",
-    "group": "Platform (future)"
-  },
-  "overlayRefreshIntervalMs": {
-    "type": "number",
-    "label": "Future overlay refresh interval ms",
-    "value": 3000,
-    "min": 1000,
-    "max": 30000,
-    "step": 500,
-    "group": "Platform (future)"
-  },
   "titleText": {
     "type": "text",
     "label": "Title text",
     "value": "STREAM TASKS",
-    "group": "Content"
-  },
-  "titleDisplayMode": {
-    "type": "dropdown",
-    "label": "Title display",
-    "value": "text",
-    "options": {
-      "text": "Title text",
-      "digital-clock": "Digital clock"
-    },
-    "group": "Content"
-  },
-  "clockFormat": {
-    "type": "dropdown",
-    "label": "Clock format",
-    "value": "24h",
-    "options": {
-      "24h": "24-hour",
-      "12h": "12-hour"
-    },
-    "group": "Content"
-  },
-  "clockShowSeconds": {
-    "type": "checkbox",
-    "label": "Show clock seconds",
-    "value": true,
     "group": "Content"
   },
   "emptyText": {
@@ -206,18 +150,6 @@
     "value": false,
     "group": "Moderation"
   },
-  "debugOverlay": {
-    "type": "checkbox",
-    "label": "Show debug overlay",
-    "value": false,
-    "group": "Moderation"
-  },
-  "diagnosticButton": {
-    "type": "button",
-    "label": "Diagnostic button",
-    "value": "Add diagnostic task",
-    "group": "Moderation"
-  },
   "position": {
     "type": "dropdown",
     "label": "Position",
@@ -244,19 +176,13 @@
   "themePreset": {
     "type": "dropdown",
     "label": "Theme preset",
-    "value": "material-light",
+    "value": "neon",
     "options": {
-      "material-light": "Material light",
-      "material-dark": "Material dark",
-      "catppuccin": "Catppuccin",
-      "gruvbox": "Gruvbox",
-      "nord": "Nord",
-      "tokyo-night": "Tokyo Night",
-      "dracula": "Dracula",
-      "rose-pine": "Rose Pine",
-      "kanagawa": "Kanagawa",
-      "one-dark": "One Dark",
-      "monokai": "Monokai"
+      "minimal": "Minimal clean",
+      "cozy": "Cozy pastel",
+      "neon": "Clean neon HUD",
+      "quest": "RPG quest board",
+      "vtuber": "VTuber cute"
     },
     "group": "Appearance"
   },
@@ -275,13 +201,13 @@
   "fontFamily": {
     "type": "googleFont",
     "label": "Font",
-    "value": "Lexend",
+    "value": "Rajdhani",
     "group": "Appearance"
   },
   "accentColor": {
     "type": "colorpicker",
     "label": "Accent color",
-    "value": "#3f7df6",
+    "value": "#29f4ff",
     "group": "Appearance"
   },
   "maxWidth": {
@@ -293,25 +219,10 @@
     "step": 10,
     "group": "Appearance"
   },
-  "maxListHeight": {
-    "type": "number",
-    "label": "Max list height px",
-    "value": 360,
-    "min": 180,
-    "max": 720,
-    "step": 10,
-    "group": "Appearance"
-  },
-  "hideScrollbar": {
-    "type": "checkbox",
-    "label": "Hide task scrollbar",
-    "value": true,
-    "group": "Appearance"
-  },
   "backgroundOpacity": {
     "type": "slider",
     "label": "Background opacity",
-    "value": 0.96,
+    "value": 0.78,
     "min": 0,
     "max": 1,
     "step": 0.01,
