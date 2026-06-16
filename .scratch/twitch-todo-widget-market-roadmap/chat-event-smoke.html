@@ -48,7 +48,7 @@
         });
       }
 
-      function receiveLiveChatMessage({ message, nick, displayName, badges = "", roles = [] }) {
+      function receiveLiveChatMessage({ message, nick, displayName, badges = "", roles = [], nestedMessage = false }) {
         if (typeof window.onEventReceived !== "function") {
           throw new Error("Live onEventReceived callback is not registered");
         }
@@ -58,7 +58,7 @@
             event: {
               service: "twitch",
               data: {
-                text: message,
+                message: nestedMessage ? { text: message } : message,
                 nick,
                 tags: {
                   "display-name": displayName,
@@ -84,6 +84,7 @@
             message: "!task Live chat task",
             nick: "viewer_one",
             displayName: "Viewer One",
+            nestedMessage: true,
           });
           await waitFor(() => document.querySelectorAll(".todo-widget__item").length === 1, "Chat event did not add a task");
 

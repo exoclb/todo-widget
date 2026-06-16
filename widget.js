@@ -296,7 +296,7 @@
     const data = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
     const tags = data.tags && typeof data.tags === "object" ? data.tags : {};
     const listener = detail.listener || envelope.listener || data.listener || "";
-    const renderedText = data.renderedText || data.text || data.message || "";
+    const renderedText = normalizeChatText(data.renderedText || data.text || data.message || data.body);
     const user = data.user || data.sender || data.author || {};
     const displayName =
       user.displayName ||
@@ -318,7 +318,7 @@
 
     return {
       listener,
-      message: String(renderedText || ""),
+      message: renderedText,
       displayName: String(displayName || "viewer"),
       username: String(username || displayName || "viewer"),
       authorId: String(authorId || ""),
@@ -326,6 +326,12 @@
       roles,
       raw: detail,
     };
+  }
+
+  function normalizeChatText(value) {
+    if (typeof value === "string") return value;
+    if (!value || typeof value !== "object") return "";
+    return normalizeChatText(value.text || value.message || value.body || value.renderedText);
   }
 
   function normalizeChatBadges(badges) {
