@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Ticker Scroll Smoke</title>
+    <link rel="stylesheet" href="../../widget.css">
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <div id="todo-widget" class="todo-widget" aria-live="polite">
+      <div class="todo-widget__panel">
+        <header class="todo-widget__header">
+          <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+          <div class="todo-widget__counter" id="todo-counter">0/10</div>
+        </header>
+        <ol class="todo-widget__list" id="todo-list"></ol>
+        <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+      </div>
+    </div>
+    <pre id="result">RUNNING</pre>
+    <script src="../../widget.js"></script>
+    <script>
+      const result = document.getElementById("result");
+
+      function waitFor(check, message, timeoutMs = 3000) {
+        const startedAt = Date.now();
+        return new Promise((resolve, reject) => {
+          function tick() {
+            try {
+              const value = check();
+              if (value) {
+                resolve(value);
+                return;
+              }
+            } catch (error) {
+              reject(error);
+              return;
+            }
+            if (Date.now() - startedAt > timeoutMs) {
+              reject(new Error(message));
+              return;
+            }
+            setTimeout(tick, 50);
+          }
+          tick();
+        });
+      }
+
+      function waitMs(delay) {
+        return new Promise((resolve) => {
+          setTimeout(resolve, delay);
+        });
+      }
+
+      function readTranslateX(element) {
+        const transform = getComputedStyle(element).transform;
+        if (!transform || transform === "none") return 0;
+        const match = transform.match(/matrix\(([^)]+)\)/);
+        if (!match) return 0;
+        return Number(match[1].split(",")[4]) || 0;
+      }
+
+      (async () => {
+        const streamer = {
+          displayName: "streamer",
+          username: "streamer",
+          authorId: "streamer",
+          badges: [{ type: "broadcaster" }],
+          roles: ["streamer"],
+        };
+
+        try {
+          localStorage.clear();
+          await window.TwitchTodoWidget.init({
+            layoutMode: "ticker",
+            streamerName: "streamer",
+            maxWidth: 420,
+            globalCooldownSeconds: 0,
+            userCooldownSeconds: 0,
+            enableAnimations: true,
+            animationSpeed: 1,
+          });
+
+          await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Check camera framing before boss fight" });
+          await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Review chat suggestions for next mission" });
+          await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Hydrate reminder after this round" });
+          await window.TwitchTodoWidget.enqueueCommand({ ...streamer, message: "!task Pick next challenge with viewers" });
+
+          const list = await waitFor(() => {
+            const element = document.getElementById("todo-list");
+            return element && element.dataset.scroll === "infinite" ? element : null;
+          }, "Ticker scroll did not initialize");
+
+          const first = readTranslateX(list);
+          await waitMs(240);
+          const second = readTranslateX(list);
+          const cloneCount = document.querySelectorAll('.todo-widget__item[aria-hidden="true"][data-ticker-clone="true"]').length;
+          const originalCount = document.querySelectorAll('.todo-widget__item:not([aria-hidden="true"])').length;
+
+          if (!(second < first)) throw new Error("Ticker did not move left smoothly");
+          if (cloneCount !== originalCount) throw new Error("Ticker did not create seamless loop clones");
+          if (Math.abs(second - first) > 40) throw new Error("Ticker jumped too far between frames");
+          if (list.scrollLeft !== 0) throw new Error("Ticker should animate transform, not scrollLeft");
+
+          result.textContent = "PASS";
+        } catch (error) {
+          result.textContent = `FAIL: ${error.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>

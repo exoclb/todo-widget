@@ -46,7 +46,7 @@
           for (const layoutMode of ["compact", "ticker", "board"]) {
             await window.TwitchTodoWidget.init({ layoutMode, streamerName: "streamer" });
             const widget = document.getElementById("todo-widget");
-            const items = [...document.querySelectorAll(".todo-widget__item")];
+            const items = [...document.querySelectorAll('.todo-widget__item:not([aria-hidden="true"])')];
             const numbers = items.map((item) => item.querySelector(".todo-widget__number").textContent).join(",");
             const authors = items.map((item) => item.querySelector(".todo-widget__author").textContent).join(",");
             if (widget.dataset.layout !== layoutMode) throw new Error(`Layout failed: ${layoutMode}`);

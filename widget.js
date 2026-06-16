@@ -61,6 +61,11 @@
     voteCooldowns: new Map(),
     renderedTaskStatuses: new Map(),
     hasRenderedTasks: false,
+    tickerScroll: {
+      frameId: 0,
+      offset: 0,
+      lastTimestamp: 0,
+    },
     previewLog: null,
   };
 
@@ -586,6 +591,61 @@
     list.replaceChildren(...orderedTasks.map((task) => createTaskElement(task, previousStatuses)));
     state.renderedTaskStatuses = new Map(orderedTasks.map((task) => [task.id, task.status]));
     state.hasRenderedTasks = true;
+    startTickerScroll(list);
+  }
+
+  function stopTickerScroll(list) {
+    if (state.tickerScroll.frameId) {
+      cancelAnimationFrame(state.tickerScroll.frameId);
+    }
+    state.tickerScroll.frameId = 0;
+    state.tickerScroll.offset = 0;
+    state.tickerScroll.lastTimestamp = 0;
+    if (list) {
+      list.style.transform = "";
+      delete list.dataset.scroll;
+    }
+  }
+
+  function startTickerScroll(list) {
+    stopTickerScroll(list);
+
+    if (state.config.layoutMode !== "ticker" || !state.config.enableAnimations) return;
+
+    const originalItems = [...list.children];
+    if (originalItems.length < 2) return;
+
+    const contentWidth = originalItems.reduce((width, item, index) => {
+      const gap = index > 0 ? parseFloat(getComputedStyle(list).columnGap || getComputedStyle(list).gap) || 0 : 0;
+      return width + item.getBoundingClientRect().width + gap;
+    }, 0);
+
+    if (contentWidth <= list.parentElement.getBoundingClientRect().width) return;
+
+    for (const item of originalItems) {
+      const clone = item.cloneNode(true);
+      clone.setAttribute("aria-hidden", "true");
+      clone.dataset.tickerClone = "true";
+      list.append(clone);
+    }
+
+    const pixelsPerSecond = 28 * state.config.animationSpeed;
+    list.dataset.scroll = "infinite";
+    list.style.willChange = "transform";
+
+    function step(timestamp) {
+      if (!state.tickerScroll.lastTimestamp) {
+        state.tickerScroll.lastTimestamp = timestamp;
+      }
+
+      const elapsedSeconds = Math.min((timestamp - state.tickerScroll.lastTimestamp) / 1000, 0.08);
+      state.tickerScroll.lastTimestamp = timestamp;
+      state.tickerScroll.offset = (state.tickerScroll.offset + pixelsPerSecond * elapsedSeconds) % contentWidth;
+      list.style.transform = `translate3d(${-state.tickerScroll.offset}px, 0, 0)`;
+      state.tickerScroll.frameId = requestAnimationFrame(step);
+    }
+
+    state.tickerScroll.frameId = requestAnimationFrame(step);
   }
 
   function getOrderedTasks(tasks) {

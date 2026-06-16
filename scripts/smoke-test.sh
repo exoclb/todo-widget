@@ -56,6 +56,7 @@ sleep 1
 run_page ".scratch/twitch-todo-widget-market-roadmap/theme-quest-smoke.html" "theme and quest wording"
 run_page ".scratch/twitch-todo-widget-market-roadmap/animation-smoke.html" "task animations"
 run_page ".scratch/twitch-todo-widget-market-roadmap/layout-smoke.html" "layout modes"
+run_page ".scratch/twitch-todo-widget-market-roadmap/ticker-scroll-smoke.html" "ticker infinite scroll"
 run_page ".scratch/twitch-todo-widget-market-roadmap/custom-image-smoke.html" "custom images"
 run_page ".scratch/twitch-todo-widget-market-roadmap/voting-smoke.html" "voting mode"
 run_page ".scratch/twitch-todo-widget-market-roadmap/preview-smoke.html" "local preview controls and commands"
