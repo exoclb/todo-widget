@@ -48,26 +48,27 @@
         });
       }
 
-      function dispatchChatMessage({ message, nick, displayName, badges = "", roles = [] }) {
-        window.dispatchEvent(
-          new CustomEvent("onEventReceived", {
-            detail: {
-              listener: "message",
-              event: {
-                service: "twitch",
-                data: {
-                  text: message,
-                  nick,
-                  tags: {
-                    "display-name": displayName,
-                    badges,
-                  },
-                  roles,
+      function receiveLiveChatMessage({ message, nick, displayName, badges = "", roles = [] }) {
+        if (typeof window.onEventReceived !== "function") {
+          throw new Error("Live onEventReceived callback is not registered");
+        }
+        window.onEventReceived({
+          detail: {
+            listener: "message",
+            event: {
+              service: "twitch",
+              data: {
+                text: message,
+                nick,
+                tags: {
+                  "display-name": displayName,
+                  badges,
                 },
+                roles,
               },
             },
-          }),
-        );
+          },
+        });
       }
 
       (async () => {
@@ -79,7 +80,7 @@
             userCooldownSeconds: 0,
           });
 
-          dispatchChatMessage({
+          receiveLiveChatMessage({
             message: "!task Live chat task",
             nick: "viewer_one",
             displayName: "Viewer One",
@@ -91,21 +92,21 @@
             throw new Error(`Chat display name was not mapped: ${stored.tasks[0].authorName}`);
           }
 
-          dispatchChatMessage({
+          receiveLiveChatMessage({
             message: "!done 1",
             nick: "viewer_one",
             displayName: "Viewer One",
           });
           await waitFor(() => document.querySelector(".todo-widget__item.is-completed"), "Task Owner could not complete from chat event");
 
-          dispatchChatMessage({
+          receiveLiveChatMessage({
             message: "!task Temporary task",
             nick: "viewer_one",
             displayName: "Viewer One",
           });
           await waitFor(() => document.querySelectorAll(".todo-widget__item:not(.is-completed)").length === 1, "Second chat task failed");
 
-          dispatchChatMessage({
+          receiveLiveChatMessage({
             message: "!delete 2",
             nick: "channel_owner",
             displayName: "Channel Owner",
@@ -119,7 +120,7 @@
             "Broadcaster could not delete from chat event",
           );
 
-          dispatchChatMessage({
+          receiveLiveChatMessage({
             message: "!task Reset me",
             nick: "viewer_one",
             displayName: "Viewer One",
@@ -129,7 +130,7 @@
             return current.tasks.length > 0;
           }, "Reset setup task failed");
 
-          dispatchChatMessage({
+          receiveLiveChatMessage({
             message: "!taskreset",
             nick: "role_mod",
             displayName: "Role Moderator",
@@ -141,7 +142,7 @@
           }, "Broadcaster could not reset from chat event");
 
           const beforeIgnoredCommand = JSON.stringify(await window.TwitchTodoWidget.getState());
-          dispatchChatMessage({
+          receiveLiveChatMessage({
             message: "!unknown should stay silent",
             nick: "viewer_one",
             displayName: "Viewer One",

@@ -756,18 +756,23 @@
     document.head.appendChild(link);
   }
 
-  window.addEventListener("onWidgetLoad", (event) => {
+  function handleWidgetLoad(event) {
     const fieldData = event.detail && event.detail.fieldData ? event.detail.fieldData : {};
     init(fieldData);
-  });
+  }
 
-  window.addEventListener("onEventReceived", (event) => {
+  function handleEventReceived(event) {
     const chatEvent = extractChatEvent(event);
     if (chatEvent.listener && chatEvent.listener !== "message") return;
     if (!chatEvent.message) return;
     debugLog("chat event", { message: chatEvent.message, user: chatEvent.displayName });
     enqueueCommand(chatEvent);
-  });
+  }
+
+  window.addEventListener("onWidgetLoad", handleWidgetLoad);
+  window.addEventListener("onEventReceived", handleEventReceived);
+  window.onWidgetLoad = handleWidgetLoad;
+  window.onEventReceived = handleEventReceived;
 
   window.TwitchTodoWidget = {
     init,
