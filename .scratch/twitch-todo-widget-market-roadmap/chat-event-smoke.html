@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Chat Event Smoke</title>
+    <link rel="stylesheet" href="../../widget.css">
+    <script>
+      window.__TWITCH_TODO_WAIT_FOR_WIDGET_LOAD__ = true;
+    </script>
+  </head>
+  <body>
+    <div id="todo-widget" class="todo-widget" aria-live="polite">
+      <div class="todo-widget__panel">
+        <header class="todo-widget__header">
+          <div class="todo-widget__title" id="todo-title">STREAM TASKS</div>
+          <div class="todo-widget__counter" id="todo-counter">0/10</div>
+        </header>
+        <ol class="todo-widget__list" id="todo-list"></ol>
+        <div class="todo-widget__empty" id="todo-empty">No tasks yet</div>
+      </div>
+    </div>
+    <pre id="result">RUNNING</pre>
+    <script src="../../widget.js"></script>
+    <script>
+      const result = document.getElementById("result");
+
+      function waitFor(check, message, timeoutMs = 3000) {
+        const startedAt = Date.now();
+        return new Promise((resolve, reject) => {
+          function tick() {
+            try {
+              const value = check();
+              if (value) {
+                resolve(value);
+                return;
+              }
+            } catch (error) {
+              reject(error);
+              return;
+            }
+            if (Date.now() - startedAt > timeoutMs) {
+              reject(new Error(message));
+              return;
+            }
+            setTimeout(tick, 50);
+          }
+          tick();
+        });
+      }
+
+      function dispatchChatMessage({ message, nick, displayName, badges = "", roles = [] }) {
+        window.dispatchEvent(
+          new CustomEvent("onEventReceived", {
+            detail: {
+              listener: "message",
+              event: {
+                service: "twitch",
+                data: {
+                  text: message,
+                  nick,
+                  tags: {
+                    "display-name": displayName,
+                    badges,
+                  },
+                  roles,
+                },
+              },
+            },
+          }),
+        );
+      }
+
+      (async () => {
+        try {
+          localStorage.clear();
+          await window.TwitchTodoWidget.init({
+            streamerName: "",
+            globalCooldownSeconds: 0,
+            userCooldownSeconds: 0,
+          });
+
+          dispatchChatMessage({
+            message: "!task Live chat task",
+            nick: "viewer_one",
+            displayName: "Viewer One",
+          });
+          await waitFor(() => document.querySelectorAll(".todo-widget__item").length === 1, "Chat event did not add a task");
+
+          let stored = await window.TwitchTodoWidget.getState();
+          if (stored.tasks[0].authorName !== "Viewer One") {
+            throw new Error(`Chat display name was not mapped: ${stored.tasks[0].authorName}`);
+          }
+
+          dispatchChatMessage({
+            message: "!done 1",
+            nick: "viewer_one",
+            displayName: "Viewer One",
+          });
+          await waitFor(() => document.querySelector(".todo-widget__item.is-completed"), "Task Owner could not complete from chat event");
+
+          dispatchChatMessage({
+            message: "!task Temporary task",
+            nick: "viewer_one",
+            displayName: "Viewer One",
+          });
+          await waitFor(() => document.querySelectorAll(".todo-widget__item:not(.is-completed)").length === 1, "Second chat task failed");
+
+          dispatchChatMessage({
+            message: "!delete 2",
+            nick: "channel_owner",
+            displayName: "Channel Owner",
+            badges: "broadcaster/1",
+          });
+          await waitFor(
+            async () => {
+              const current = await window.TwitchTodoWidget.getState();
+              return !current.tasks.some((task) => task.id === 2);
+            },
+            "Broadcaster could not delete from chat event",
+          );
+
+          dispatchChatMessage({
+            message: "!task Reset me",
+            nick: "viewer_one",
+            displayName: "Viewer One",
+          });
+          await waitFor(async () => {
+            const current = await window.TwitchTodoWidget.getState();
+            return current.tasks.length > 0;
+          }, "Reset setup task failed");
+
+          dispatchChatMessage({
+            message: "!taskreset",
+            nick: "role_mod",
+            displayName: "Role Moderator",
+            roles: ["moderator"],
+          });
+          await waitFor(async () => {
+            const current = await window.TwitchTodoWidget.getState();
+            return current.tasks.length === 0 && current.nextId === 1;
+          }, "Broadcaster could not reset from chat event");
+
+          const beforeIgnoredCommand = JSON.stringify(await window.TwitchTodoWidget.getState());
+          dispatchChatMessage({
+            message: "!unknown should stay silent",
+            nick: "viewer_one",
+            displayName: "Viewer One",
+          });
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          const afterIgnoredCommand = JSON.stringify(await window.TwitchTodoWidget.getState());
+          if (afterIgnoredCommand !== beforeIgnoredCommand) {
+            throw new Error("Ignored chat command changed task state");
+          }
+
+          result.textContent = "PASS";
+        } catch (error) {
+          result.textContent = `FAIL: ${error.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>

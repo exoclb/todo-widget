@@ -294,6 +294,7 @@
     const detail = event && event.detail ? event.detail : event || {};
     const envelope = detail.event || detail.data || detail;
     const data = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+    const tags = data.tags && typeof data.tags === "object" ? data.tags : {};
     const listener = detail.listener || envelope.listener || data.listener || "";
     const renderedText = data.renderedText || data.text || data.message || "";
     const user = data.user || data.sender || data.author || {};
@@ -302,13 +303,17 @@
       user.displayname ||
       user.name ||
       user.username ||
+      tags["display-name"] ||
+      tags.displayName ||
       data.displayName ||
+      data.displayname ||
       data.name ||
       data.username ||
+      data.nick ||
       "viewer";
-    const username = user.username || user.name || data.username || data.name || displayName;
-    const authorId = user.id || user.userId || data.userId || data.authorId || "";
-    const badges = user.badges || data.badges || [];
+    const username = user.username || user.name || data.username || data.name || data.nick || displayName;
+    const authorId = user.id || user.userId || data.userId || data.authorId || tags["user-id"] || "";
+    const badges = normalizeChatBadges(user.badges || data.badges || tags.badges || []);
     const roles = user.roles || data.roles || [];
 
     return {
@@ -321,6 +326,19 @@
       roles,
       raw: detail,
     };
+  }
+
+  function normalizeChatBadges(badges) {
+    if (Array.isArray(badges)) return badges;
+    if (!badges) return [];
+    if (typeof badges === "string") {
+      return badges
+        .split(",")
+        .map((badge) => badge.split("/")[0].trim())
+        .filter(Boolean);
+    }
+    if (typeof badges === "object") return Object.keys(badges);
+    return [];
   }
 
   function getUserKey(user) {
